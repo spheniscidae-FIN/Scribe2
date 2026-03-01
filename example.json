@@ -1,0 +1,33 @@
+It would be even better if the alliance leader had the ability to generate an API key for the alliance, which could be used in a JSON query to fetch VS week data directly from the database. For example, if I made the following query:
+
+
+https://*yourserver*.*domain*/api/VSstats?
+alliance_id=fbr3
+key=API avain joka generoidaan liittouman asetuksissa
+fields=day, position, playername, score
+
+then the server could return, for example, the following JSON response:
+
+{
+    "alliance_id": 123,
+    "players": [
+    {
+    "day": "Monday",
+    "position": 1,
+    "Playername": "Mikko",
+    "score": 8420
+    },
+    {
+    "paiva": "2026-03-01",
+    "sijoitus": 2,
+    "nimi": "Jari",
+    "pisteet": 7990
+    }
+  ]
+}
+
+This would greatly simplify tracking alliance players’ performance at the alliance R4/5 level. The more professional the alliance management tools are, the more enjoyable it would be for both the players and the alliance leadership, and the more attractive the game as a whole would become.
+
+Since JSON would only provide read access to the database and could be strictly limited to specific fields, it would not allow access to any data that the requester should not receive. It also would not allow any modifications to the database, making it a completely safe addition to the game’s backend mechanics.
+
+How does this sound? Would this be a viable development proposal?
