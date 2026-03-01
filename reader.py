@@ -140,9 +140,27 @@ def check_tag():
     
     return tag, player_id
 
+def detect_position(pos=0):
+    
+    if check("is_player_profile_check"): return 1
+    elif check("very_popular_check"): return 2
+    elif check("own_screen_check"): return 3
+    elif check("low_level_check"): return 4
+    else:
+        out("read_pos screen checks failed")
+        return 0
+                
+def own_profile():
+    out("--> Own profile detected!")
+    own_name = "Sphen of love"
+    player, player_id = add_self(own_name)
+    py_click(target="close_player_window")
+    out(f"--> Own profile found, setting plyer as {player} and returning to previous view.")
+    return player, player_id
+
 def read_pos(pos):  
     if check_escape_hotkey():
-        return 6, "6", 6, 6
+        return 6, "6", 6, 6, "6"
     out(f"-->  Reading position {pos}.")
     global read_index
     read_index += 1
@@ -169,7 +187,7 @@ def read_pos(pos):
             position = 0
         case _:
             print("tuntematon positio")
-            return 6, "6", 6, 6
+            return 6, "6", 6, 6, "6"
         
     out(f"--> Position {position} found.")  
     score_read_area = f"readarea_{position}_score"
@@ -181,33 +199,28 @@ def read_pos(pos):
     except Exception as e:
         out(f" error {e}")
 
-    if check("player_profile_check"):
-        out("--> Not own profile, reading player name:")
-        py_click(target="open_profile")
-        player, player_id = check_tag()
-        if player == "error" and player_id == "error":
-            pass #############################################################
-        py_click(target="close_player_window")
-        out(f"----> player {player} found")
-    elif  check("very_popular_check"):
-        py_click(target="close_popular")
-    elif check("own_screen_check"):
-        out("--> Own profile detected!")
-        own_name = "Sphen of love"
-        player, player_id = add_self(own_name)
-        py_click(target="close_player_window")
-        out(f"--> Own profile found, setting plyer as {player} and returning to previous view.")
-    else:
-        if check("low_level_check"):
+    match detect_position():
+        case 1:
+            out("--> Not own profile, reading player name:")
+            py_click(target="open_profile")
+            player, player_id = check_tag()
+            if player == "error" and player_id == "error":
+                pass
+            py_click(target="close_player_window")
+            out(f"----> player {player} found")
+        case 2:
+            py_click(target="close_popular")
+            player, player_id = own_profile()
+        case 3:
+            player, player_id = own_profile()
+        case 4:
             out("low level player detected")
             pyautogui.press('esc')
             return 0, "0", 0, 0, "0"
-        else:
+        case 0:
             out("read_pos screen checks failed")
-            return 6, "6", 6, 6
+            return 6, "6", 6, 6, "6"
  
-
-
     out("--> Calling score reading pipeline:")
     score, cycle = get_validated_score(score_read_area, player, pos=position)
     out(f"--> score of {score} returned in {cycle} read cycles")
