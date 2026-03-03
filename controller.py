@@ -41,6 +41,8 @@ def scroll_down(amount, delay=0.2):
     step = -10 if amount >0 else 10
     counter = 0
     while counter < amount:
+        if check_escape_hotkey():
+            break
         pyautogui.moveTo(1000, 950, 0.2)
         #pyautogui.click()
         time.sleep(0.2)
