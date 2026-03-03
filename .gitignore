@@ -1,1 +1,4 @@
 *.json
+/UPLOADS/
+/DATA/DEBUG/
+/Reference_Data/
