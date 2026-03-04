@@ -1,68 +1,71 @@
+/* player-styles.css */
+
 .profile-card {
     background-color: #1a1a1a;
-    border-left: 6px solid #FF9900;
-    border-radius: 8px;
-    padding: 25px; /* Lisää tilaa ympärille */
+    border-left: 8px solid #FF9900;
+    border-radius: 12px;
+    padding: 30px;
     text-align: left;
-    max-width: 500px;
+    max-width: 600px; /* Enemmän tilaa isolle tekstille */
+    font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
-/* Nimi 1.5x isommaksi */
 .player-name {
-    margin: 0 0 15px 0;
+    margin: 0 0 20px 0;
     color: #FF9900;
-    font-size: 48px; /* Kasvatettu reilusti */
-    font-weight: bold;
-    border-bottom: 2px solid #FF9900;
+    font-size: 52px; /* 1.5x alkuperäisestä isosta */
+    font-weight: 900;
+    border-bottom: 3px solid #FF9900;
     padding-bottom: 10px;
 }
 
-/* Grid-asettelu isommalla välillä */
 .stats-grid {
     display: grid;
-    grid-template-columns: 200px 1fr; /* Levennetty selite-sarake */
-    gap: 12px 20px;
+    /* Kasvatettu vasenta saraketta (280px), jotta mahtuu iso teksti */
+    grid-template-columns: 280px 1fr; 
+    gap: 15px 25px;
     align-items: center;
 }
 
-/* Selitteet 1.5x (n. 24px) */
+/* Selitteet 1.5x */
 .stat-label {
+    background-color: #333; /* Harmaa tausta kuten kuvassasi */
+    color: #eee;
     font-weight: bold;
-    color: #ffffff;
-    font-size: 24px;
+    font-size: 26px; 
+    padding: 5px 15px;
+    border-radius: 4px;
     white-space: nowrap;
 }
 
-/* Arvot 1.5x (n. 24px) */
+/* Arvot 1.5x */
 .stat-value {
-    color: #cccccc;
-    font-size: 24px;
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: bold;
 }
 
-/* Erityiskohtelu T1 ja T2 */
+/* T1 ja T2 erikoissäädöt */
 .value-t1 {
     color: #00c2ff;
-    font-size: 28px; /* Hieman korostettu */
-    font-weight: bold;
+    font-size: 32px;
 }
 
 .value-t2 {
     color: #00c2ff;
-    font-size: 18px; /* Pidetty selkeästi pienempänä */
-    opacity: 0.8;
+    font-size: 18px; /* Pidetty pienenä kuten toivottu */
+    opacity: 0.7;
 }
 
-/* Väliotsikot (Army Info, Activity) */
 .section-header {
-    margin: 20px 0 10px 0;
+    margin: 30px 0 15px 0;
     color: #ffffff;
-    font-size: 22px;
+    font-size: 28px;
     font-weight: bold;
 }
 
-/* Erotinviiva */
 .divider {
-    height: 1px;
+    height: 2px;
     background: #444;
-    margin: 20px 0;
+    margin: 25px 0;
 }
