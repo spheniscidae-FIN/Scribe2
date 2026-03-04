@@ -1,73 +1,68 @@
-/* player-styles.css */
-
 .profile-card {
-    background: linear-gradient(135deg, #1e1e1e 0%, #111111 100%);
-    border: 1px solid #444;
+    background-color: #1a1a1a;
     border-left: 6px solid #FF9900;
-    border-radius: 12px;
-    padding: 25px;
-    color: white;
-    font-family: 'Inter', 'Segoe UI', sans-serif;
+    border-radius: 8px;
+    padding: 25px; /* Lisää tilaa ympärille */
     text-align: left;
-    max-width: 450px; /* Kasvatettu leveyttä isompaa tekstiä varten */
+    max-width: 500px;
 }
 
+/* Nimi 1.5x isommaksi */
 .player-name {
-    font-size: 32px; /* Erittäin suuri ja selkeä nimi */
-    font-weight: 800;
+    margin: 0 0 15px 0;
     color: #FF9900;
-    margin: 0 0 20px 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-bottom: 2px solid #333;
+    font-size: 48px; /* Kasvatettu reilusti */
+    font-weight: bold;
+    border-bottom: 2px solid #FF9900;
     padding-bottom: 10px;
 }
 
-.data-grid {
+/* Grid-asettelu isommalla välillä */
+.stats-grid {
     display: grid;
-    grid-template-columns: 160px 1fr; /* Leveämpi sarake selitteille */
+    grid-template-columns: 200px 1fr; /* Levennetty selite-sarake */
     gap: 12px 20px;
     align-items: center;
 }
 
-.label {
-    color: #FFFFFF; /* Puhtaan valkoinen selite on näkyvämpi */
-    font-weight: 700;
-    font-size: 18px; /* Kasvatettu kokoa */
-    text-transform: none;
-}
-
-.value {
-    color: #FFD700; /* Kultainen sävy arvoille parantaa luettavuutta */
-    font-size: 20px; /* Isompi fontti numeroille */
-    font-family: 'Courier New', monospace;
+/* Selitteet 1.5x (n. 24px) */
+.stat-label {
     font-weight: bold;
+    color: #ffffff;
+    font-size: 24px;
+    white-space: nowrap;
 }
 
-/* Erityissäädöt T1 ja T2 luvuille */
+/* Arvot 1.5x (n. 24px) */
+.stat-value {
+    color: #cccccc;
+    font-size: 24px;
+}
+
+/* Erityiskohtelu T1 ja T2 */
 .value-t1 {
-    font-size: 22px; /* T1 on hieman muita korostetumpi */
-    color: #00d4ff;
-    font-weight: 900;
+    color: #00c2ff;
+    font-size: 28px; /* Hieman korostettu */
+    font-weight: bold;
 }
 
 .value-t2 {
-    font-size: 16px; /* T2 on tarkoituksella pienempi */
-    color: #00a3c4;
-    opacity: 0.9;
+    color: #00c2ff;
+    font-size: 18px; /* Pidetty selkeästi pienempänä */
+    opacity: 0.8;
 }
 
-.section-title {
-    font-size: 14px;
+/* Väliotsikot (Army Info, Activity) */
+.section-header {
+    margin: 20px 0 10px 0;
+    color: #ffffff;
+    font-size: 22px;
     font-weight: bold;
-    text-transform: uppercase;
-    color: #666;
-    margin: 25px 0 10px 0;
-    letter-spacing: 2px;
 }
 
+/* Erotinviiva */
 .divider {
     height: 1px;
-    background: #333;
-    margin: 15px 0;
+    background: #444;
+    margin: 20px 0;
 }
