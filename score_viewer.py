@@ -2,6 +2,7 @@ import sys
 import os
 import csv
 import sqlite3
+import difflib  # Lisätty difflib import tähän alkuun selkeyden vuoksi
 from collections import defaultdict
 
 from PyQt6.QtWidgets import (
@@ -12,6 +13,14 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
+# --- POIKKEUSTAPAUSLISTA (ALIAS-VERTAILU) ---
+# Tänne lisätään parit: 'ocr_tunnistus': 'oikea_nimi_tietokannassa'
+NAME_ALIASES = {
+    'tapi': 'ᴛᴀᴘɪ',
+    'tap1': 'ᴛᴀᴘɪ',
+    'chick': 'chicken',
+    # Voit täyttää tätä tarpeen mukaan
+}
 
 # ---------------- NUMERIIKKAA TUKEVA ITEM ----------------
 
@@ -24,7 +33,6 @@ class NumericItem(QTableWidgetItem):
         except ValueError:
             return super().__lt__(other)
 
-
 # ---------------- PÄÄOHJELMA ----------------
 
 class ResultsEditor(QMainWindow):
@@ -34,16 +42,12 @@ class ResultsEditor(QMainWindow):
         self.setWindowTitle("Scribe – Results Editor (AI Enhanced)")
         self.setMinimumSize(1250, 800)
 
-        # Fontin zoomaus
         self.font_size = 12
-
-        # Polut
         base = os.path.dirname(os.path.abspath(__file__))
         self.base_dir = base
         self.results_path = os.path.join(base, "results")
         self.players_db_path = os.path.join(base, "DATA", "DATABASE", "Players.db")
 
-        # Tiedostokuviot
         self.patterns = {
             "MA": "_mon.csv", "TI": "_tues.csv", "KE": "_wed.csv",
             "TO": "_thur.csv", "PE": "_fri.csv", "LA": "_sat.csv",
@@ -53,25 +57,19 @@ class ResultsEditor(QMainWindow):
             "KILLS": "kills_results.csv"
         }
 
-        # UI
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
 
-        # Yläpalkki
         top = QHBoxLayout()
         self.refresh_btn = QPushButton("Update all")
         self.refresh_btn.clicked.connect(self.load_all_csv)
-
         self.generate_la_btn = QPushButton("Generate Saturday")
         self.generate_la_btn.clicked.connect(self.generate_la_scores)
-
         self.generate_vko_btn = QPushButton("Generate Week")
         self.generate_vko_btn.clicked.connect(self.generate_weekly_summary)
-
         self.save_csv_btn = QPushButton("Save active tab as CSV")
         self.save_csv_btn.clicked.connect(self.save_active_csv)
-
         self.validate_btn = QPushButton("Validate Data")
         self.validate_btn.clicked.connect(self.validate_active_table)
 
@@ -83,7 +81,6 @@ class ResultsEditor(QMainWindow):
         top.addStretch()
         layout.addLayout(top)
 
-        # Välilehdet
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
 
@@ -92,10 +89,8 @@ class ResultsEditor(QMainWindow):
         
         for tab_name in all_tab_names:
             table = QTableWidget()
-            # Kaikissa taulukoissa on nyt 5 saraketta
             table.setColumnCount(5)
             table.setHorizontalHeaderLabels(["PFP", "Rank", "Playername", "Value", "player_id"])
-
             table.setEditTriggers(QTableWidget.EditTrigger.AllEditTriggers)
             table.setSortingEnabled(True)
             
@@ -123,9 +118,7 @@ class ResultsEditor(QMainWindow):
     # ---------------- APUFUNKTIOT ----------------
 
     def get_all_names_from_db(self):
-        """Hakee kaikki nimet ja ID:t tietokannasta fuzzy-hakua varten."""
-        if not os.path.exists(self.players_db_path):
-            return {}
+        if not os.path.exists(self.players_db_path): return {}
         try:
             conn = sqlite3.connect(self.players_db_path)
             cursor = conn.cursor()
@@ -133,46 +126,47 @@ class ResultsEditor(QMainWindow):
             data = {row[0]: str(row[1]) for row in cursor.fetchall() if row[0]}
             conn.close()
             return data
-        except:
-            return {}
+        except: return {}
 
     def find_pid_by_name(self, name: str):
-        """Hakee player_id:n nimen perusteella. Jos tarkkaa osumaa ei ole, kokeillaan fuzzy-hakua."""
+        """Hakee player_id:n hyödyntäen aliaksia, tarkkaa hakua ja fuzzy matchia."""
         if not name: return None
-        name = name.strip()
+        raw_name = name.strip()
+        search_name = raw_name.lower()
         
-        # 1. Yritetään ensin tarkkaa hakua (Case-insensitive)
-        if not os.path.exists(self.players_db_path): return None
-        try:
-            conn = sqlite3.connect(self.players_db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT player_id FROM players WHERE name = ? COLLATE NOCASE", (name,))
-            result = cursor.fetchone()
-            conn.close()
-            if result:
-                return str(result[0])
-        except:
-            pass
+        # 1. TARKISTETAAN ALIAS-LISTA (Poikkeustapaukset)
+        if search_name in NAME_ALIASES:
+            raw_name = NAME_ALIASES[search_name] # Vaihdetaan etsittävä nimi viralliseen muotoon
+            print(f"Alias Match: '{name}' -> '{raw_name}'")
 
-        # 2. Jos ei löytynyt, kokeillaan Fuzzy Matchia
-        import difflib
+        # 2. Yritetään tarkkaa hakua tietokannasta (NOCASE huomioi t-kirjaimet jne)
+        if os.path.exists(self.players_db_path):
+            try:
+                conn = sqlite3.connect(self.players_db_path)
+                cursor = conn.cursor()
+                cursor.execute("SELECT player_id FROM players WHERE name = ? COLLATE NOCASE", (raw_name,))
+                result = cursor.fetchone()
+                conn.close()
+                if result: return str(result[0])
+            except: pass
+
+        # 3. Fuzzy Match (viimeinen oljenkorsi)
         db_players = self.get_all_names_from_db() # { "Nimi": "ID" }
         if not db_players: return None
         
         all_db_names = list(db_players.keys())
-        # get_close_matches palauttaa listan parhaista osumista. cutoff=0.6 on yleensä hyvä.
-        matches = difflib.get_close_matches(name, all_db_names, n=1, cutoff=0.6)
+        matches = difflib.get_close_matches(raw_name, all_db_names, n=1, cutoff=0.6)
         
         if matches:
             best_match = matches[0]
-            print(f"Fuzzy Match: '{name}' -> '{best_match}'") # Debug-printti konsoliin
+            print(f"Fuzzy Match: '{name}' -> '{best_match}'")
             return db_players[best_match]
             
         return None
 
     def get_pfp_path(self, player_id: str):
         if not player_id: return None
-        folder = os.path.join(self.base_dir, "DATA", "Database", "Profile_pictures")
+        folder = os.path.join(self.base_dir, "DATA", "DATABASE", "Profile_pictures")
         path = os.path.join(folder, f"{player_id}_pfp.png")
         return path if os.path.exists(path) else None
 
@@ -220,7 +214,6 @@ class ResultsEditor(QMainWindow):
     def load_csv_to_table(self, path: str, table: QTableWidget):
         table.setRowCount(0)
         table.blockSignals(True)
-        
         tab_name = next(k for k, v in self.tables.items() if v == table)
         is_ai = tab_name in ["POWER", "DONATIONS", "KILLS"]
 
@@ -231,25 +224,22 @@ class ResultsEditor(QMainWindow):
                 with open(path, "r", encoding="cp1252") as f: content = f.read()
             
             reader = csv.reader(content.splitlines(), delimiter=';')
-            next(reader, None) # Otsikko
+            next(reader, None)
 
             for row in reader:
                 if not row: continue
                 row_idx = table.rowCount()
                 table.insertRow(row_idx)
-
                 pid = None
+
                 if is_ai:
-                    # AI: rank;name;value;[pid]
                     rank, name, value = row[0], row[1], row[2]
                     pid = row[3] if len(row) > 3 and row[3].strip() else self.find_pid_by_name(name)
-                    
                     table.setItem(row_idx, 1, NumericItem(rank))
                     table.setItem(row_idx, 2, QTableWidgetItem(name))
                     table.setItem(row_idx, 3, NumericItem(value))
                     table.setItem(row_idx, 4, QTableWidgetItem(pid if pid else ""))
                 else:
-                    # Normi: index;name;score;pid
                     if len(row) < 4: continue
                     idx, name, score, pid = row
                     table.setItem(row_idx, 1, NumericItem(idx))
@@ -257,7 +247,6 @@ class ResultsEditor(QMainWindow):
                     table.setItem(row_idx, 3, NumericItem(score))
                     table.setItem(row_idx, 4, QTableWidgetItem(pid))
 
-                # Asetetaan PFP
                 pfp_label = QLabel()
                 pfp_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 p_path = self.get_pfp_path(pid)
@@ -272,13 +261,10 @@ class ResultsEditor(QMainWindow):
             table.blockSignals(False)
             table.resizeRowsToContents()
 
-    # ---------------- TALLENNUS ----------------
-
     def save_active_csv(self):
         tab_name = self.tabs.tabText(self.tabs.currentIndex())
         pattern = self.patterns.get(tab_name)
         path = self.find_csv(pattern)
-        
         if not path:
             prefix = self.get_current_week_prefix() or "1_"
             fname = pattern if "_results" in pattern else f"{prefix}{pattern.lstrip('_')}"
@@ -290,12 +276,9 @@ class ResultsEditor(QMainWindow):
         try:
             with open(path, "w", encoding="utf-8", newline="") as f:
                 writer = csv.writer(f, delimiter=';')
-                # Otsikot: AI-tabeissa käytetään nyt myös player_id
                 if is_ai: writer.writerow(["rank", "name", "value", "player_id"])
                 else: writer.writerow(["Index", "Playername", "Score", "player_id"])
-                
                 for r in range(table.rowCount()):
-                    # Sarakeindeksit: 1=Rank, 2=Name, 3=Value, 4=PID
                     row_data = [
                         table.item(r, 1).text() if table.item(r, 1) else "",
                         table.item(r, 2).text() if table.item(r, 2) else "",
@@ -303,11 +286,8 @@ class ResultsEditor(QMainWindow):
                         table.item(r, 4).text() if table.item(r, 4) else ""
                     ]
                     writer.writerow(row_data)
-            
             QMessageBox.information(self, "Success", f"Saved to:\n{os.path.basename(path)}")
         except Exception as e: QMessageBox.critical(self, "Error", str(e))
-
-    # ---------------- LOGIIKKA (SAT & WEEK) ----------------
 
     def generate_la_scores(self):
         weekday_scores = defaultdict(int)
@@ -327,14 +307,12 @@ class ResultsEditor(QMainWindow):
             total = int(vko_t.item(row, 3).text())
             pid = vko_t.item(row, 4).text()
             la_score = total - weekday_scores.get(name, 0)
-            
             idx = la_t.rowCount()
             la_t.insertRow(idx)
             la_t.setItem(idx, 1, NumericItem(str(idx + 1)))
             la_t.setItem(idx, 2, QTableWidgetItem(name))
             la_t.setItem(idx, 3, NumericItem(str(la_score)))
             la_t.setItem(idx, 4, QTableWidgetItem(pid))
-            
             pfp_l = QLabel()
             pfp_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
             p_path = self.get_pfp_path(pid)
@@ -358,7 +336,6 @@ class ResultsEditor(QMainWindow):
         vko_t = self.tables["VKO"]
         vko_t.setRowCount(0)
         vko_t.blockSignals(True)
-        
         for i, (pid, data) in enumerate(sorted_res):
             vko_t.insertRow(i)
             vko_t.setItem(i, 1, NumericItem(str(i + 1)))
@@ -370,7 +347,6 @@ class ResultsEditor(QMainWindow):
             p_path = self.get_pfp_path(pid)
             if p_path: pfp_l.setPixmap(QPixmap(p_path).scaled(75, 75, Qt.AspectRatioMode.KeepAspectRatio))
             vko_t.setCellWidget(i, 0, pfp_l)
-            
         vko_t.blockSignals(False)
         self.tabs.setCurrentIndex(6)
 
@@ -378,7 +354,7 @@ class ResultsEditor(QMainWindow):
         tab_name = self.tabs.tabText(self.tabs.currentIndex())
         table = self.tables[tab_name]
         errs = []
-        last_val = 99999999999
+        last_val = 999999999999
         for r in range(table.rowCount()):
             try:
                 val = int(table.item(r, 3).text().replace(" ", "").replace(".", ""))
@@ -386,7 +362,6 @@ class ResultsEditor(QMainWindow):
                 last_val = val
             except: errs.append(f"Row {r+1}: NaN")
         QMessageBox.information(self, "Validation", "OK" if not errs else "\n".join(errs))
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
