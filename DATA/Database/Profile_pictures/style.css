@@ -1,49 +1,73 @@
 /* player-styles.css */
 
 .profile-card {
-    background-color: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 10px;
-    padding: 15px;
+    background: linear-gradient(135deg, #1e1e1e 0%, #111111 100%);
+    border: 1px solid #444;
+    border-left: 6px solid #FF9900;
+    border-radius: 12px;
+    padding: 25px;
     color: white;
-    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
     text-align: left;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.header-row {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    border-bottom: 2px solid #FF9900;
-    padding-bottom: 10px;
-}
-
-.profile-pic {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 2px solid #FF9900;
-    object-fit: cover;
+    max-width: 450px; /* Kasvatettu leveyttä isompaa tekstiä varten */
 }
 
 .player-name {
-    font-size: 24px;
-    font-weight: bold;
+    font-size: 32px; /* Erittäin suuri ja selkeä nimi */
+    font-weight: 800;
     color: #FF9900;
-    margin: 0;
+    margin: 0 0 20px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
 }
 
 .data-grid {
     display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: 5px 15px;
+    grid-template-columns: 160px 1fr; /* Leveämpi sarake selitteille */
+    gap: 12px 20px;
+    align-items: center;
 }
 
 .label {
-    color: #888;
+    color: #FFFFFF; /* Puhtaan valkoinen selite on näkyvämpi */
+    font-weight: 700;
+    font-size: 18px; /* Kasvatettu kokoa */
+    text-transform: none;
+}
+
+.value {
+    color: #FFD700; /* Kultainen sävy arvoille parantaa luettavuutta */
+    font-size: 20px; /* Isompi fontti numeroille */
+    font-family: 'Courier New', monospace;
     font-weight: bold;
+}
+
+/* Erityissäädöt T1 ja T2 luvuille */
+.value-t1 {
+    font-size: 22px; /* T1 on hieman muita korostetumpi */
+    color: #00d4ff;
+    font-weight: 900;
+}
+
+.value-t2 {
+    font-size: 16px; /* T2 on tarkoituksella pienempi */
+    color: #00a3c4;
+    opacity: 0.9;
+}
+
+.section-title {
     font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #666;
+    margin: 25px 0 10px 0;
+    letter-spacing: 2px;
+}
+
+.divider {
+    height: 1px;
+    background: #333;
+    margin: 15px 0;
 }
