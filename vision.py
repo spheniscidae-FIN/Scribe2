@@ -63,18 +63,16 @@ total_ocr_calls = 0
 
 def get_validated_score(indicator_id, player, pos):
     global viimeisin_luku, total_ocr_calls
-
+    max_rotation = 3
     max_retries, best_guess, rerun, total_cycles = 17, 0, 2, 0
     try:
         for cycle in range(1, rerun + 1):
             for attempt in range(1, max_retries + 1):
-                total_cycles += 1
-
                 mittaukset = []
-                for _ in range(3):
+                for x in range(max_rotation):
                     total_ocr_calls += 1
                     total_cycles =+1
-                    mittaus = get_score(indicator_id, player, attempts=attempt, rerun=cycle, pos=pos)
+                    mittaus = get_score(indicator_id, player, attempts=attempt, rerun=cycle, pos=pos, rotation=x)
                     # Säilytä None erillisenä arvona
                     mittaukset.append(mittaus)
                     time.sleep(0.02)
@@ -289,7 +287,7 @@ def preprocess_with_hex(img_bgr, pos, margin=10):
 
     return processed
 
-def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0):
+def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0, rotation=1):
     safe_name = "".join(c for c in str(player_name) if c.isalnum() or c in (' ', '_')).strip()
     try:
         line = config.get('SCREEN_INDICATORS', indicator_id)
@@ -309,16 +307,25 @@ def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0):
             pre_processed = preprocess_with_hex_combined(screenshot_bgr, pos)
 
         pre_prosessed_skeletor = pre_processed.copy()
-
+        
         # DEBUG koodi
         os.makedirs(DEBUG_DIR, exist_ok=True)
         if DEBUG: cv2.imwrite(os.path.join(DEBUG_DIR, f"{safe_name}_ORIGINAL.png"), screenshot_bgr)
         # cv2.imwrite(os.path.join(DEBUG_DIR, f"{safe_name}_PRE_PROCESSED.png"), pre_processed)
 
         # Rerun-polku tai perusreitti
-        if rerun == 2:
+        if rerun == 1:
             # 1. Skaalataan reilusti yli (esim. 6x)
-            overscaled = cv2.resize(pre_processed, None, fx=6.0, fy=6.0, interpolation=cv2.INTER_LANCZOS4)
+            if rotation == 0:
+                scale = 3
+            elif rotation == 1:
+                scale = 4
+            elif rotation == 2:
+                scale = 5
+            else:
+                scale = 2
+                
+            overscaled = cv2.resize(pre_processed, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
 
             # 2. Vahva terävöinti (Unsharp Mask)
             gaussian_blur = cv2.GaussianBlur(overscaled, (0, 0), 3)
@@ -329,7 +336,14 @@ def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0):
             blurred = cv2.medianBlur(resized, 3)
         else:
             # PERUSREITTI (Kierros 1)
-            scale = 2.5
+            if rotation == 0:
+                scale = 1.5
+            elif rotation == 1:
+                scale = 2
+            elif rotation == 2:
+                scale = 2.5
+            else:
+                scale = 2
             resized = cv2.resize(pre_processed, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
             blurred = cv2.blur(resized, (3, 3))
 

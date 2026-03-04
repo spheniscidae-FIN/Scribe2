@@ -287,8 +287,8 @@ def read_daily(day=""):
         if ndx == 6 and player == "6" and score==6 and cycle==6:
             return False
         tallenna_tulokset(ndx, score, player, cycle, player_id)
-        print(F"{ndx} : {player} : {score}")
-        print(f"{cycle} lukukertaa")
+        out(F"{ndx} : {player} : {score}")
+        out(f"{cycle} lukukertaa")
         kaikki_tulokset.append({
             "indeksi": ndx,
             "pelaaja": player,

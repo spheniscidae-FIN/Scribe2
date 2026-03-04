@@ -1,0 +1,50 @@
+Date : 2026-03-04 17:59:28
+Directory : q:\Skriptit\Scribe2
+Total : 18 files,  2330 codes, 379 comments, 460 blanks, all 3169 lines
+
+Languages
++--------------------+------------+------------+------------+------------+------------+
+| language           | files      | code       | comment    | blank      | total      |
++--------------------+------------+------------+------------+------------+------------+
+| Python             |         15 |      2,176 |        374 |        437 |      2,987 |
+| Ini                |          1 |         90 |          0 |         14 |        104 |
+| PostCSS            |          1 |         57 |          5 |          9 |         71 |
+| JSON with Comments |          1 |          7 |          0 |          0 |          7 |
++--------------------+------------+------------+------------+------------+------------+
+
+Directories
++--------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                         | files      | code       | comment    | blank      | total      |
++--------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                            |         18 |      2,330 |        379 |        460 |      3,169 |
+| . (Files)                                                    |         16 |      2,183 |        374 |        437 |      2,994 |
+| DATA                                                         |          2 |        147 |          5 |         23 |        175 |
+| DATA\Config                                                  |          1 |         90 |          0 |         14 |        104 |
+| DATA\Database                                                |          1 |         57 |          5 |          9 |         71 |
+| DATA\Database\Profile_pictures                               |          1 |         57 |          5 |          9 |         71 |
++--------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++--------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| filename                                                     | language           | code       | comment    | blank      | total      |
++--------------------------------------------------------------+--------------------+------------+------------+------------+------------+
+| q:\Skriptit\Scribe2\Clairvoyant2.py                          | Python             |         88 |          7 |         27 |        122 |
+| q:\Skriptit\Scribe2\DATA\Config\STUFFnSHIET.ini              | Ini                |         90 |          0 |         14 |        104 |
+| q:\Skriptit\Scribe2\DATA\Database\Profile_pictures\style.css | PostCSS            |         57 |          5 |          9 |         71 |
+| q:\Skriptit\Scribe2\Scribe.py                                | Python             |        132 |          6 |         16 |        154 |
+| q:\Skriptit\Scribe2\Scribe2.code-workspace                   | JSON with Comments |          7 |          0 |          0 |          7 |
+| q:\Skriptit\Scribe2\capture_tool.py                          | Python             |        206 |         48 |         49 |        303 |
+| q:\Skriptit\Scribe2\classes.py                               | Python             |         16 |          0 |          3 |         19 |
+| q:\Skriptit\Scribe2\controller.py                            | Python             |        148 |         18 |         33 |        199 |
+| q:\Skriptit\Scribe2\convert.py                               | Python             |         17 |        125 |          3 |        145 |
+| q:\Skriptit\Scribe2\database_viewer.py                       | Python             |        155 |         18 |         36 |        209 |
+| q:\Skriptit\Scribe2\framework.py                             | Python             |        112 |         12 |         28 |        152 |
+| q:\Skriptit\Scribe2\global_var.py                            | Python             |         14 |          0 |          0 |         14 |
+| q:\Skriptit\Scribe2\logger.py                                | Python             |        101 |         21 |         34 |        156 |
+| q:\Skriptit\Scribe2\reader.py                                | Python             |        288 |          8 |         28 |        324 |
+| q:\Skriptit\Scribe2\score_viewer.py                          | Python             |        316 |         20 |         59 |        395 |
+| q:\Skriptit\Scribe2\seeker.py                                | Python             |         48 |         15 |         20 |         83 |
+| q:\Skriptit\Scribe2\upsert.py                                | Python             |        124 |         12 |         26 |        162 |
+| q:\Skriptit\Scribe2\vision.py                                | Python             |        411 |         64 |         75 |        550 |
+| Total                                                        |                    |      2,330 |        379 |        460 |      3,169 |
++--------------------------------------------------------------+--------------------+------------+------------+------------+------------+

@@ -12,6 +12,9 @@ import sys
 import subprocess
 import keyboard
 
+from seeker import screen_check
+from controller import scroll_down, scroll_up, py_click
+
 # DPI-awareness: yritetään molempia kutsuja turvallisesti
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(1)

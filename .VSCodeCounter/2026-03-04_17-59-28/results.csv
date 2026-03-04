@@ -1,0 +1,20 @@
+"filename", "language", "Python", "JSON with Comments", "Ini", "PostCSS", "comment", "blank", "total"
+"q:\Skriptit\Scribe2\Clairvoyant2.py", "Python", 88, 0, 0, 0, 7, 27, 122
+"q:\Skriptit\Scribe2\DATA\Config\STUFFnSHIET.ini", "Ini", 0, 0, 90, 0, 0, 14, 104
+"q:\Skriptit\Scribe2\DATA\Database\Profile_pictures\style.css", "PostCSS", 0, 0, 0, 57, 5, 9, 71
+"q:\Skriptit\Scribe2\Scribe.py", "Python", 132, 0, 0, 0, 6, 16, 154
+"q:\Skriptit\Scribe2\Scribe2.code-workspace", "JSON with Comments", 0, 7, 0, 0, 0, 0, 7
+"q:\Skriptit\Scribe2\capture_tool.py", "Python", 206, 0, 0, 0, 48, 49, 303
+"q:\Skriptit\Scribe2\classes.py", "Python", 16, 0, 0, 0, 0, 3, 19
+"q:\Skriptit\Scribe2\controller.py", "Python", 148, 0, 0, 0, 18, 33, 199
+"q:\Skriptit\Scribe2\convert.py", "Python", 17, 0, 0, 0, 125, 3, 145
+"q:\Skriptit\Scribe2\database_viewer.py", "Python", 155, 0, 0, 0, 18, 36, 209
+"q:\Skriptit\Scribe2\framework.py", "Python", 112, 0, 0, 0, 12, 28, 152
+"q:\Skriptit\Scribe2\global_var.py", "Python", 14, 0, 0, 0, 0, 0, 14
+"q:\Skriptit\Scribe2\logger.py", "Python", 101, 0, 0, 0, 21, 34, 156
+"q:\Skriptit\Scribe2\reader.py", "Python", 288, 0, 0, 0, 8, 28, 324
+"q:\Skriptit\Scribe2\score_viewer.py", "Python", 316, 0, 0, 0, 20, 59, 395
+"q:\Skriptit\Scribe2\seeker.py", "Python", 48, 0, 0, 0, 15, 20, 83
+"q:\Skriptit\Scribe2\upsert.py", "Python", 124, 0, 0, 0, 12, 26, 162
+"q:\Skriptit\Scribe2\vision.py", "Python", 411, 0, 0, 0, 64, 75, 550
+"Total", "-", 2176, 7, 90, 57, 379, 460, 3169

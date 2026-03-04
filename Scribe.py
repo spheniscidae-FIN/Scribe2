@@ -18,6 +18,20 @@ user32.EnableMouseInPointer(True)
 SendInput = user32.SendInput
 
 
+"""
+1. Scribe.py produces the daily VS data
+2. database_viewer.py updates and manages the player database and google sheet/form
+3. Score_viewer.py validates data and can edit scoreboards
+4. capture_tool.py provides data from STR rankin (Power, kills, donations)
+5. convert.py converts capture_tools's data in csv format
+6. upsert.py Gathers data from all sources and upserts them in the PostgreSQL
+
+note:
+Grafana reads data from Postgre, sheets, and github
+
+"""
+
+
 # --- ALUSTUS JA POLUT ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(BASE_DIR, 'DATA', 'Config', 'STUFFnSHIET.ini')

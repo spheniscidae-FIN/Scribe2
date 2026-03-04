@@ -290,37 +290,62 @@ class ResultsEditor(QMainWindow):
         except Exception as e: QMessageBox.critical(self, "Error", str(e))
 
     def generate_la_scores(self):
+        # Kerätään Ma-Pe pisteet player_id:n mukaan
+        # Käytetään player_id:tä (sarake 4) nimen sijaan, koska se on yksilöllinen
         weekday_scores = defaultdict(int)
         for day in ["MA", "TI", "KE", "TO", "PE"]:
             table = self.tables[day]
             for row in range(table.rowCount()):
-                try: weekday_scores[table.item(row, 2).text().strip()] += int(table.item(row, 3).text())
-                except: pass
+                try:
+                    pid = table.item(row, 4).text().strip()
+                    if pid:
+                        score_text = table.item(row, 3).text().replace(" ", "").replace(".", "")
+                        weekday_scores[pid] += int(score_text)
+                except:
+                    pass
 
         vko_t = self.tables["VKO"]
         la_t = self.tables["LA"]
         la_t.setRowCount(0)
         la_t.blockSignals(True)
 
+        # Lasketaan Lauantai: Viikkoarvo - (Ma+Ti+Ke+To+Pe)
         for row in range(vko_t.rowCount()):
-            name = vko_t.item(row, 2).text()
-            total = int(vko_t.item(row, 3).text())
-            pid = vko_t.item(row, 4).text()
-            la_score = total - weekday_scores.get(name, 0)
-            idx = la_t.rowCount()
-            la_t.insertRow(idx)
-            la_t.setItem(idx, 1, NumericItem(str(idx + 1)))
-            la_t.setItem(idx, 2, QTableWidgetItem(name))
-            la_t.setItem(idx, 3, NumericItem(str(la_score)))
-            la_t.setItem(idx, 4, QTableWidgetItem(pid))
-            pfp_l = QLabel()
-            pfp_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            p_path = self.get_pfp_path(pid)
-            if p_path: pfp_l.setPixmap(QPixmap(p_path).scaled(75, 75, Qt.AspectRatioMode.KeepAspectRatio))
-            la_t.setCellWidget(idx, 0, pfp_l)
-            
+            try:
+                name = vko_t.item(row, 2).text()
+                total_text = vko_t.item(row, 3).text().replace(" ", "").replace(".", "")
+                total = int(total_text)
+                pid = vko_t.item(row, 4).text().strip()
+                
+                # Vähennetään viikkoarvosta arkipäivien summa
+                # Jos pelaajalla ei ole arkipisteitä, vähennetään 0
+                la_score = total - weekday_scores.get(pid, 0)
+                
+                # Jos tulos on negatiivinen (datavirhe), asetetaan nollaksi tai pidetään tulos
+                # la_score = max(0, la_score) 
+
+                idx = la_t.rowCount()
+                la_t.insertRow(idx)
+                
+                # Täytetään rivi
+                la_t.setItem(idx, 1, NumericItem(str(idx + 1)))
+                la_t.setItem(idx, 2, QTableWidgetItem(name))
+                la_t.setItem(idx, 3, NumericItem(str(la_score)))
+                la_t.setItem(idx, 4, QTableWidgetItem(pid))
+                
+                # PFP haku
+                pfp_l = QLabel()
+                pfp_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                p_path = self.get_pfp_path(pid)
+                if p_path:
+                    pfp_l.setPixmap(QPixmap(p_path).scaled(75, 75, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                la_t.setCellWidget(idx, 0, pfp_l)
+            except Exception as e:
+                print(f"Error at row {row}: {e}")
+                
         la_t.blockSignals(False)
-        self.tabs.setCurrentIndex(5)
+        la_t.resizeRowsToContents()
+        self.tabs.setCurrentIndex(5) # Vaihdetaan LA-välilehdelle
 
     def generate_weekly_summary(self):
         weekly_data = defaultdict(lambda: {"name": "", "total": 0})
