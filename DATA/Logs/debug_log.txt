@@ -1,0 +1,295 @@
+[17:14:31.14] : > Setting window AlwaysOnTop with handle 1119534.
+[17:14:33.36] : performing screencheck for daily_rank_window_check, successful try number 1
+[17:18:28.33] : > Setting window AlwaysOnTop with handle 6098018.
+[17:18:31.19] : performing screencheck for daily_rank_window_check, successful try number 1
+[17:18:31.19] : ------> Initiating click sequence
+[17:18:31.98] : ------> clicking location 927*931 with execution time of 0.40 seconds.
+[17:18:32.03] : performing screencheck for top_reached, successful try number 1
+[17:18:32.03] : ----> Perfomring ScrollDown with amount of 16.
+[17:18:56.49] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:18:56.68] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:18:56.91] : ----> Moving cursor to starting point (930, {930})
+[17:18:56.96] : ------> Pressing mouse left, sending LEFTDOWN event.
+[17:18:57.02] : ------> Calculating relative movement and performing drag action..
+[17:18:57.77] : ----> Releasing mouse left, sending LEFTUP event.
+[17:18:57.81] : ----> Moving cursor to starting point (930, {930})
+[17:18:57.86] : ------> Pressing mouse left, sending LEFTDOWN event.
+[17:18:57.93] : ------> Calculating relative movement and performing drag action..
+[17:18:58.68] : ----> Releasing mouse left, sending LEFTUP event.
+[17:18:58.73] : ----> Moving cursor to starting point (930, {930})
+[17:18:58.78] : ------> Pressing mouse left, sending LEFTDOWN event.
+[17:18:58.84] : ------> Calculating relative movement and performing drag action..
+[17:18:59.59] : ----> Releasing mouse left, sending LEFTUP event.
+[17:18:59.63] : ----> Moving cursor to starting point (930, {930})
+[17:18:59.68] : ------> Pressing mouse left, sending LEFTDOWN event.
+[17:18:59.74] : ------> Calculating relative movement and performing drag action..
+[17:19:00.49] : ----> Releasing mouse left, sending LEFTUP event.
+[17:19:00.66] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:19:00.83] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:19:00.83] : -->  Reading position 6.
+[17:19:00.83] : --> Position 0 found.
+[17:19:00.83] : ------> Initiating click sequence
+[17:19:00.83] : -------->received target default_position as a parameter
+[17:19:00.83] : -------->Target 'default_position' resolved to 930, 930
+[17:19:01.62] : ------> clicking location 935*926 with execution time of 0.40 seconds.
+[17:19:01.62] : ------> Initiating click sequence
+[17:19:01.62] : -------->received target readarea_0 as a parameter
+[17:19:01.62] : -------->Target 'readarea_0' resolved to 1097, 1002
+[17:19:02.50] : ------> clicking location 1092*999 with execution time of 0.40 seconds.
+[17:19:02.50] : --> Clearing clipboard.
+[17:19:09.50] : > Setting window AlwaysOnTop with handle 1182728.
+[17:19:10.10] : performing screencheck for daily_rank_window_check, successful try number 1
+[17:19:10.10] : ------> Initiating click sequence
+[17:19:10.99] : ------> clicking location 927*933 with execution time of 0.40 seconds.
+[17:19:11.03] : performing screencheck for top_reached, successful try number 1
+[17:19:11.03] : ----> Perfomring ScrollDown with amount of 16.
+[17:19:35.49] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:19:35.66] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:19:36.07] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:19:36.24] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:19:36.24] : -->  Reading position 6.
+[17:19:36.24] : --> Position 0 found.
+[17:19:36.24] : ------> Initiating click sequence
+[17:19:36.24] : -------->received target default_position as a parameter
+[17:19:36.24] : -------->Target 'default_position' resolved to 930, 930
+[17:19:37.03] : ------> clicking location 931*932 with execution time of 0.40 seconds.
+[17:19:37.03] : ------> Initiating click sequence
+[17:19:37.03] : -------->received target readarea_0 as a parameter
+[17:19:37.03] : -------->Target 'readarea_0' resolved to 1097, 1002
+[17:19:37.93] : ------> clicking location 1096*999 with execution time of 0.40 seconds.
+[17:19:37.93] : --> Clearing clipboard.
+[17:19:38.03] : performing screencheck for is_player_profile_check, successful try number 1
+[17:19:38.03] : --> Not own profile, reading player name:
+[17:19:38.03] : ------> Initiating click sequence
+[17:19:38.03] : -------->received target open_profile as a parameter
+[17:19:38.03] : -------->Target 'open_profile' resolved to 1631, 124
+[17:19:38.67] : ------> clicking location 1626*120 with execution time of 0.40 seconds.
+[17:19:39.55] : ----> Screen Check Timeout : no_tag_check at cycle 10
+[17:19:39.55] : ------> Initiating click sequence
+[17:19:39.55] : -------->received target note_name_field as a parameter
+[17:19:39.55] : -------->Target 'note_name_field' resolved to 968, 571
+[17:19:40.19] : ------> clicking location 969*566 with execution time of 0.40 seconds.
+[17:19:40.69] : ------> Initiating click sequence
+[17:19:40.69] : -------->received target close_profile as a parameter
+[17:19:40.69] : -------->Target 'close_profile' resolved to 1642, 247
+[17:19:41.55] : ------> clicking location 1642*252 with execution time of 0.40 seconds.
+[17:19:41.70] : Check tag raturned id 28022026-0B188477 with tag JG1000
+[17:19:41.70] : ------> Initiating click sequence
+[17:19:41.70] : -------->received target close_player_window as a parameter
+[17:19:41.70] : -------->Target 'close_player_window' resolved to 1642, 50
+[17:19:42.45] : ------> clicking location 1638*51 with execution time of 0.40 seconds.
+[17:19:42.45] : ----> player JG1000 found
+[17:19:42.45] : --> Calling score reading pipeline:
+[17:19:43.07] : --> score of 21000 returned in 12 read cycles
+[17:19:43.07] : ----> Setting line index as 1
+[17:19:43.07] : ------> Initiating click sequence
+[17:19:43.86] : ------> clicking location 930*932 with execution time of 0.40 seconds.
+[17:19:43.86] : ----> Perfomring ScrollUp with amount of -6.
+[17:19:45.83] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:19:46.00] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:19:46.00] : -->  Reading position 6.
+[17:19:46.00] : --> Position 0 found.
+[17:19:46.00] : ------> Initiating click sequence
+[17:19:46.00] : -------->received target default_position as a parameter
+[17:19:46.00] : -------->Target 'default_position' resolved to 930, 930
+[17:19:46.74] : ------> clicking location 931*928 with execution time of 0.40 seconds.
+[17:19:46.74] : ------> Initiating click sequence
+[17:19:46.74] : -------->received target readarea_0 as a parameter
+[17:19:46.74] : -------->Target 'readarea_0' resolved to 1097, 1002
+[17:19:47.62] : ------> clicking location 1099*1001 with execution time of 0.40 seconds.
+[17:19:47.62] : --> Clearing clipboard.
+[17:19:47.72] : performing screencheck for is_player_profile_check, successful try number 1
+[17:19:47.72] : --> Not own profile, reading player name:
+[17:19:47.72] : ------> Initiating click sequence
+[17:19:47.72] : -------->received target open_profile as a parameter
+[17:19:47.72] : -------->Target 'open_profile' resolved to 1631, 124
+[17:19:48.36] : ------> clicking location 1630*127 with execution time of 0.40 seconds.
+[17:19:49.20] : ----> Screen Check Timeout : no_tag_check at cycle 10
+[17:19:49.20] : ------> Initiating click sequence
+[17:19:49.20] : -------->received target note_name_field as a parameter
+[17:19:49.20] : -------->Target 'note_name_field' resolved to 968, 571
+[17:19:49.96] : ------> clicking location 964*566 with execution time of 0.40 seconds.
+[17:19:50.46] : ------> Initiating click sequence
+[17:19:50.46] : -------->received target close_profile as a parameter
+[17:19:50.46] : -------->Target 'close_profile' resolved to 1642, 247
+[17:19:51.13] : ------> clicking location 1642*244 with execution time of 0.40 seconds.
+[17:19:51.29] : Check tag raturned id 27022026-0Z983319 with tag Dedaloς
+[17:19:51.29] : ------> Initiating click sequence
+[17:19:51.29] : -------->received target close_player_window as a parameter
+[17:19:51.29] : -------->Target 'close_player_window' resolved to 1642, 50
+[17:19:52.07] : ------> clicking location 1644*53 with execution time of 0.40 seconds.
+[17:19:52.07] : ----> player Dedaloς found
+[17:19:52.07] : --> Calling score reading pipeline:
+[17:19:52.38] : --> score of 120674 returned in 6 read cycles
+[17:19:52.38] : ----> Setting line index as 2
+[17:19:52.38] : ------> Initiating click sequence
+[17:19:53.13] : ------> clicking location 925*928 with execution time of 0.40 seconds.
+[17:19:53.13] : ----> Perfomring ScrollUp with amount of -6.
+[17:19:55.11] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:19:55.27] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:19:55.27] : -->  Reading position 6.
+[17:19:55.27] : --> Position 0 found.
+[17:19:55.27] : ------> Initiating click sequence
+[17:19:55.27] : -------->received target default_position as a parameter
+[17:19:55.27] : -------->Target 'default_position' resolved to 930, 930
+[17:19:55.88] : ------> clicking location 935*933 with execution time of 0.40 seconds.
+[17:19:55.88] : ------> Initiating click sequence
+[17:19:55.88] : -------->received target readarea_0 as a parameter
+[17:19:55.88] : -------->Target 'readarea_0' resolved to 1097, 1002
+[17:19:56.58] : ------> clicking location 1096*1007 with execution time of 0.40 seconds.
+[17:19:56.58] : --> Clearing clipboard.
+[17:19:56.68] : performing screencheck for is_player_profile_check, successful try number 1
+[17:19:56.68] : --> Not own profile, reading player name:
+[17:19:56.68] : ------> Initiating click sequence
+[17:19:56.68] : -------->received target open_profile as a parameter
+[17:19:56.68] : -------->Target 'open_profile' resolved to 1631, 124
+[17:19:57.47] : ------> clicking location 1630*119 with execution time of 0.40 seconds.
+[17:19:58.31] : ----> Screen Check Timeout : no_tag_check at cycle 10
+[17:19:58.31] : ------> Initiating click sequence
+[17:19:58.31] : -------->received target note_name_field as a parameter
+[17:19:58.31] : -------->Target 'note_name_field' resolved to 968, 571
+[17:19:58.95] : ------> clicking location 971*575 with execution time of 0.40 seconds.
+[17:19:59.45] : ------> Initiating click sequence
+[17:19:59.45] : -------->received target close_profile as a parameter
+[17:19:59.45] : -------->Target 'close_profile' resolved to 1642, 247
+[17:20:00.20] : ------> clicking location 1643*247 with execution time of 0.40 seconds.
+[17:20:00.35] : Check tag raturned id 27022026-0G497261 with tag Taibo1988
+[17:20:00.35] : ------> Initiating click sequence
+[17:20:00.35] : -------->received target close_player_window as a parameter
+[17:20:00.35] : -------->Target 'close_player_window' resolved to 1642, 50
+[17:20:01.14] : ------> clicking location 1641*45 with execution time of 0.40 seconds.
+[17:20:01.14] : ----> player Taibo1988 found
+[17:20:01.14] : --> Calling score reading pipeline:
+[17:20:01.45] : --> score of 263379 returned in 6 read cycles
+[17:20:01.45] : ----> Setting line index as 3
+[17:20:01.45] : ------> Initiating click sequence
+[17:20:02.27] : ------> clicking location 928*925 with execution time of 0.40 seconds.
+[17:20:02.27] : ----> Perfomring ScrollUp with amount of -5.
+[17:20:03.95] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:20:04.12] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:20:04.12] : -->  Reading position 6.
+[17:20:04.12] : --> Position 0 found.
+[17:20:04.12] : ------> Initiating click sequence
+[17:20:04.12] : -------->received target default_position as a parameter
+[17:20:04.12] : -------->Target 'default_position' resolved to 930, 930
+[17:20:04.97] : ------> clicking location 928*933 with execution time of 0.40 seconds.
+[17:20:04.97] : ------> Initiating click sequence
+[17:20:04.97] : -------->received target readarea_0 as a parameter
+[17:20:04.97] : -------->Target 'readarea_0' resolved to 1097, 1002
+[17:20:05.67] : ------> clicking location 1095*1007 with execution time of 0.40 seconds.
+[17:20:05.67] : --> Clearing clipboard.
+[17:20:05.77] : performing screencheck for is_player_profile_check, successful try number 1
+[17:20:05.77] : --> Not own profile, reading player name:
+[17:20:05.77] : ------> Initiating click sequence
+[17:20:05.77] : -------->received target open_profile as a parameter
+[17:20:05.77] : -------->Target 'open_profile' resolved to 1631, 124
+[17:20:06.60] : ------> clicking location 1630*121 with execution time of 0.40 seconds.
+[17:20:07.43] : ----> Screen Check Timeout : no_tag_check at cycle 10
+[17:20:07.43] : ------> Initiating click sequence
+[17:20:07.43] : -------->received target note_name_field as a parameter
+[17:20:07.43] : -------->Target 'note_name_field' resolved to 968, 571
+[17:20:08.14] : ------> clicking location 964*573 with execution time of 0.40 seconds.
+[17:20:08.64] : ------> Initiating click sequence
+[17:20:08.64] : -------->received target close_profile as a parameter
+[17:20:08.64] : -------->Target 'close_profile' resolved to 1642, 247
+[17:20:09.41] : ------> clicking location 1646*244 with execution time of 0.40 seconds.
+[17:20:09.56] : Check tag raturned id 27022026-0X928765 with tag Jeremy2626
+[17:20:09.56] : ------> Initiating click sequence
+[17:20:09.56] : -------->received target close_player_window as a parameter
+[17:20:09.56] : -------->Target 'close_player_window' resolved to 1642, 50
+[17:20:10.38] : ------> clicking location 1637*52 with execution time of 0.40 seconds.
+[17:20:10.38] : ----> player Jeremy2626 found
+[17:20:10.38] : --> Calling score reading pipeline:
+[17:20:10.69] : --> score of 267875 returned in 6 read cycles
+[17:20:10.69] : ----> Setting line index as 4
+[17:20:10.69] : ------> Initiating click sequence
+[17:20:11.60] : ------> clicking location 934*931 with execution time of 0.40 seconds.
+[17:20:11.60] : ----> Perfomring ScrollUp with amount of -6.
+[17:20:13.57] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:20:13.74] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:20:13.74] : -->  Reading position 6.
+[17:20:13.74] : --> Position 0 found.
+[17:20:13.74] : ------> Initiating click sequence
+[17:20:13.74] : -------->received target default_position as a parameter
+[17:20:13.74] : -------->Target 'default_position' resolved to 930, 930
+[17:20:14.63] : ------> clicking location 925*926 with execution time of 0.40 seconds.
+[17:20:14.63] : ------> Initiating click sequence
+[17:20:14.63] : -------->received target readarea_0 as a parameter
+[17:20:14.63] : -------->Target 'readarea_0' resolved to 1097, 1002
+[17:20:15.45] : ------> clicking location 1102*997 with execution time of 0.40 seconds.
+[17:20:15.45] : --> Clearing clipboard.
+[17:20:15.54] : performing screencheck for is_player_profile_check, successful try number 1
+[17:20:15.54] : --> Not own profile, reading player name:
+[17:20:15.54] : ------> Initiating click sequence
+[17:20:15.54] : -------->received target open_profile as a parameter
+[17:20:15.55] : -------->Target 'open_profile' resolved to 1631, 124
+[17:20:16.30] : ------> clicking location 1632*124 with execution time of 0.40 seconds.
+[17:20:17.14] : ----> Screen Check Timeout : no_tag_check at cycle 10
+[17:20:17.14] : ------> Initiating click sequence
+[17:20:17.14] : -------->received target note_name_field as a parameter
+[17:20:17.15] : -------->Target 'note_name_field' resolved to 968, 571
+[17:20:18.00] : ------> clicking location 968*567 with execution time of 0.40 seconds.
+[17:20:18.50] : ------> Initiating click sequence
+[17:20:18.50] : -------->received target close_profile as a parameter
+[17:20:18.50] : -------->Target 'close_profile' resolved to 1642, 247
+[17:20:19.17] : ------> clicking location 1639*248 with execution time of 0.40 seconds.
+[17:20:19.33] : Check tag raturned id 27022026-0N645728 with tag Tugtug17
+[17:20:19.33] : ------> Initiating click sequence
+[17:20:19.33] : -------->received target close_player_window as a parameter
+[17:20:19.33] : -------->Target 'close_player_window' resolved to 1642, 50
+[17:20:20.03] : ------> clicking location 1638*47 with execution time of 0.40 seconds.
+[17:20:20.03] : ----> player Tugtug17 found
+[17:20:20.03] : --> Calling score reading pipeline:
+[17:20:20.33] : --> score of 276859 returned in 6 read cycles
+[17:20:20.33] : ----> Setting line index as 5
+[17:20:20.33] : ------> Initiating click sequence
+[17:20:21.09] : ------> clicking location 926*930 with execution time of 0.40 seconds.
+[17:20:21.09] : ----> Perfomring ScrollUp with amount of -6.
+[17:20:23.07] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:20:23.25] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:20:23.48] : ----> Moving cursor to starting point (930, {930})
+[17:20:23.54] : ------> Pressing mouse left, sending LEFTDOWN event.
+[17:20:23.60] : ------> Calculating relative movement and performing drag action..
+[17:20:24.35] : ----> Releasing mouse left, sending LEFTUP event.
+[17:20:24.56] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:20:24.73] : ----> Screen Check Timeout : SVS_top_reached at cycle 2
+[17:20:24.73] : -->  Reading position 6.
+[17:20:24.73] : --> Position 0 found.
+[17:20:24.73] : ------> Initiating click sequence
+[17:20:24.73] : -------->received target default_position as a parameter
+[17:20:24.73] : -------->Target 'default_position' resolved to 930, 930
+[17:20:25.34] : ------> clicking location 928*933 with execution time of 0.40 seconds.
+[17:20:25.34] : ------> Initiating click sequence
+[17:20:25.34] : -------->received target readarea_0 as a parameter
+[17:20:25.34] : -------->Target 'readarea_0' resolved to 1097, 1002
+[17:20:26.07] : ------> clicking location 1099*1005 with execution time of 0.40 seconds.
+[17:20:26.07] : --> Clearing clipboard.
+[17:20:26.17] : performing screencheck for is_player_profile_check, successful try number 1
+[17:20:26.17] : --> Not own profile, reading player name:
+[17:20:26.17] : ------> Initiating click sequence
+[17:20:26.17] : -------->received target open_profile as a parameter
+[17:20:26.17] : -------->Target 'open_profile' resolved to 1631, 124
+[17:20:26.79] : ------> clicking location 1632*124 with execution time of 0.40 seconds.
+[17:20:27.65] : ----> Screen Check Timeout : no_tag_check at cycle 10
+[17:20:27.65] : ------> Initiating click sequence
+[17:20:27.65] : -------->received target note_name_field as a parameter
+[17:20:27.65] : -------->Target 'note_name_field' resolved to 968, 571
+[17:20:28.47] : ------> clicking location 968*574 with execution time of 0.40 seconds.
+[17:20:28.97] : ------> Initiating click sequence
+[17:20:28.97] : -------->received target close_profile as a parameter
+[17:20:28.97] : -------->Target 'close_profile' resolved to 1642, 247
+[17:20:29.89] : ------> clicking location 1640*244 with execution time of 0.40 seconds.
+[17:20:30.05] : Check tag raturned id 27022026-0Q184354 with tag NagatoUwU
+[17:20:30.05] : ------> Initiating click sequence
+[17:20:30.05] : -------->received target close_player_window as a parameter
+[17:20:30.05] : -------->Target 'close_player_window' resolved to 1642, 50
+[17:20:30.86] : ------> clicking location 1638*47 with execution time of 0.40 seconds.
+[17:20:30.87] : ----> player NagatoUwU found
+[17:20:30.87] : --> Calling score reading pipeline:
+[17:20:31.17] : --> score of 357663 returned in 6 read cycles
+[17:20:31.17] : ----> Setting line index as 6
+[17:20:31.18] : ------> Initiating click sequence
+[17:20:31.78] : ------> clicking location 933*932 with execution time of 0.40 seconds.
+[17:20:31.78] : ----> Perfomring ScrollUp with amount of -6.
+[17:20:33.76] : ----> Screen Check Timeout : top_reached at cycle 2
+[17:20:33.92] : ----> Screen Check Timeout : SVS_top_reached at cycle 2

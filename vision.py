@@ -10,8 +10,10 @@ import ctypes
 from ctypes import wintypes as wt
 import pytesseract
 import gc
+import tesserocr
+
 from collections import Counter
-from PIL import ImageGrab
+from PIL import ImageGrab, Image
 from skimage.morphology import skeletonize
 from skimage.util import invert
 from logger import out
@@ -61,7 +63,7 @@ viimeisin_luku = 0
 read_index = 0
 total_ocr_calls = 0
 
-def get_validated_score(indicator_id, player, pos):
+def get_validated_score(indicator_id, player, pos, api):
     global viimeisin_luku, total_ocr_calls
     max_rotation = 6  # Nostetaan kuuteen
     max_retries, rerun, total_cycles = 17, 2, 0
@@ -80,7 +82,7 @@ def get_validated_score(indicator_id, player, pos):
                     
                     # get_score() hoitaa logiikkasi mukaan eri variaatiot:
                     # x=0,1: Perus / x=2,3: Inversio / x=4: Harmaa / x=5: Harmaa-inversio
-                    mittaus = get_score(indicator_id, player, attempts=attempt, rerun=cycle, pos=pos, rotation=x)
+                    mittaus = get_score(api, indicator_id, player, attempts=attempt, rerun=cycle, pos=pos, rotation=x)
                     
                     if mittaus is not None and mittaus > 0:
                         mittaukset.append(int(mittaus))
@@ -274,6 +276,172 @@ def preprocess_with_hex(img_bgr, pos, margin=10):
 
     return processed
 
+#Uusi tessocr looppi
+def get_score(api, indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0, rotation=1):
+    safe_name = "".join(c for c in str(player_name) if c.isalnum() or c in (' ', '_')).strip()
+    
+    # Alustetaan muuttujat, jotta ne voidaan siivota varmasti lopussa
+    screenshot_bgr = None
+    pre_processed = None
+    processable = None
+    final_img = None
+
+    try:
+        line = config.get('SCREEN_INDICATORS', indicator_id)
+        parts = [p.strip() for p in line.split(',')]
+        if len(parts) < 5:
+            raise ValueError("SCREEN_INDICATORS line malformed")
+        x1, y1, x2, y2 = map(int, parts[1:5])
+
+        # 1. Kaappaus ja muunnos
+        with ImageGrab.grab(bbox=(x1, y1, x2, y2)) as screenshot_pil:
+            screenshot_bgr = cv2.cvtColor(np.array(screenshot_pil), cv2.COLOR_RGB2BGR)
+
+        # 2. Esikäsittely valinta
+        if rerun < 2:
+            pre_processed = preprocess_with_hex(screenshot_bgr, pos)
+        else:
+            pre_processed = preprocess_with_hex_combined(screenshot_bgr, pos)
+
+        # 3. Skaalauslogiikka (tiivistetty sanakirjaan nopeuden vuoksi)
+        scale_map = {0: 2, 1: 3, 2: 4, 3: 5, 4: 6} if rerun == 1 else {0: 1, 1: 2, 2: 3, 3: 4, 4: 5}
+        scale = scale_map.get(rotation, 2)
+
+        if rerun == 1:
+            tmp_scale = cv2.resize(pre_processed, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+            gaussian_blur = cv2.GaussianBlur(tmp_scale, (0, 0), 3)
+            unsharp_image = cv2.addWeighted(tmp_scale, 1.5, gaussian_blur, -0.5, 0)
+            resized = cv2.resize(unsharp_image, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+            blurred = cv2.medianBlur(resized, 3)
+            del tmp_scale, gaussian_blur, unsharp_image, resized
+        else:
+            resized = cv2.resize(pre_processed, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+            blurred = cv2.blur(resized, (3, 3))
+            del resized
+
+        resized_orig = cv2.resize(screenshot_bgr, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
+
+        # 4. Prosessointi
+        kernel = np.ones((2, 2), np.uint8)
+        processable = cv2.erode(blurred, kernel, iterations=1)
+        del blurred
+
+        if len(processable.shape) == 3:
+            processable = cv2.cvtColor(processable, cv2.COLOR_BGR2GRAY)
+        
+        processable_u8 = processable.astype(np.uint8)
+        processable_inv = cv2.bitwise_not(processable_u8)
+
+        # 5. MATCH-CASE - Putki
+        match attempts:
+            case 1: final_img = resized_orig
+            case 2: final_img = processable_u8
+            case 3: _, final_img = cv2.threshold(processable_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            case 4 | 5:
+                iters = 1 if attempts == 4 else 2
+                _, thresh = cv2.threshold(processable_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                final_img = cv2.dilate(thresh, np.ones((2, 2), np.uint8), iterations=iters)
+                del thresh
+            case 6:
+                k_sharp = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+                sharp = cv2.filter2D(processable_u8, -1, k_sharp)
+                _, thresh = cv2.threshold(sharp, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                final_img = cv2.dilate(thresh, np.ones((2, 2), np.uint8), iterations=1)
+                del sharp, thresh
+            case 7 | 8:
+                iters = 1 if attempts == 7 else 2
+                _, thresh = cv2.threshold(processable_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                final_img = cv2.erode(thresh, np.ones((2, 2), np.uint8), iterations=iters)
+                del thresh
+            case 9: final_img = cv2.bitwise_not(screenshot_bgr)
+            case 10: final_img = processable_inv
+            case 11: _, final_img = cv2.threshold(processable_inv, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            case 12 | 13:
+                iters = 1 if attempts == 12 else 2
+                _, thresh = cv2.threshold(processable_inv, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                final_img = cv2.dilate(thresh, np.ones((2, 2), np.uint8), iterations=iters)
+                del thresh
+            case 14:
+                k_sharp = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+                sharp = cv2.filter2D(processable_inv, -1, k_sharp)
+                _, thresh = cv2.threshold(sharp, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                final_img = cv2.dilate(thresh, np.ones((2, 2), np.uint8), iterations=1)
+                del sharp, thresh
+            case 15 | 16:
+                iters = 1 if attempts == 15 else 2
+                _, thresh = cv2.threshold(processable_inv, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                final_img = cv2.erode(thresh, np.ones((2, 2), np.uint8), iterations=iters)
+                del thresh
+            case 17:
+                if rerun == 2:
+                    # Raskas Case 17 optimoituna
+                    os_skel = cv2.resize(pre_processed, None, fx=12.0, fy=12.0, interpolation=cv2.INTER_LANCZOS4)
+                    g_blur = cv2.GaussianBlur(os_skel, (0, 0), 3)
+                    unsharp = cv2.addWeighted(os_skel, 1.5, g_blur, -0.5, 0)
+                    gray = cv2.cvtColor(unsharp, cv2.COLOR_BGR2GRAY) if len(unsharp.shape) == 3 else unsharp
+                    
+                    k_th = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+                    tophat = cv2.morphologyEx(gray, cv2.MORPH_TOPHAT, k_th)
+                    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(tophat.astype(np.uint8))
+                    _, bw = cv2.threshold(clahe, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                    
+                    if np.count_nonzero(bw) < (bw.size // 2): bw = cv2.bitwise_not(bw)
+                    bw_sep = cv2.erode(bw, np.ones((2, 2), np.uint8), iterations=1)
+                    
+                    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(bw_sep, connectivity=8)
+                    mask = np.zeros(bw.shape, dtype=bool)
+                    for i in range(1, num_labels):
+                        if stats[i, cv2.CC_STAT_AREA] >= 20: mask[labels == i] = True
+                    
+                    if np.any(mask):
+                        skel = (skeletonize(mask.astype(bool)).astype(np.uint8) * 255)
+                        # Pruning (tiivistetty)
+                        sk = (skel > 0).astype(np.uint8)
+                        for _ in range(6):
+                            neigh = cv2.filter2D(sk, -1, np.ones((3, 3), np.uint8))
+                            endp = np.logical_and(sk == 1, neigh == 2)
+                            if not np.any(endp): break
+                            sk[endp] = 0
+                        final_skel = (sk * 255).astype(np.uint8)
+                    else:
+                        final_skel = bw_sep
+
+                    dil = cv2.dilate(final_skel, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)), iterations=3)
+                    shrunk = cv2.resize(cv2.GaussianBlur(dil, (9, 9), 0), None, fx=(1.0/6.0), fy=(1.0/6.0), interpolation=cv2.INTER_AREA)
+                    enh = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(4, 4)).apply(shrunk.astype(np.uint8))
+                    final_img = cv2.bitwise_not(cv2.morphologyEx(enh, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))))
+                    del os_skel, g_blur, unsharp, tophat, clahe, bw, bw_sep, mask, dil, shrunk, enh
+                else: return 0
+            case _:
+                _, final_img = cv2.threshold(processable_u8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # 6. OCR suoritus
+        if len(final_img.shape) == 3:
+            final_img = cv2.cvtColor(final_img, cv2.COLOR_BGR2GRAY)
+        
+        final_img_u8 = final_img.astype(np.uint8)
+        with Image.fromarray(final_img_u8) as pil_img:
+            api.SetImage(pil_img)
+            tulos_teksti = api.GetUTF8Text()
+            api.Clear()
+
+        if DEBUG:
+            debug_attempt = attempts + (17 if rerun == 2 else 0)
+            os.makedirs(DEBUG_DIR, exist_ok=True)
+            cv2.imwrite(os.path.join(DEBUG_DIR, f"{safe_name}_proc_att{debug_attempt}.png"), final_img_u8)
+
+        # 7. Loppusiivous ja palautus
+        puhdas_numero = "".join(filter(str.isdigit, tulos_teksti))
+        return int(puhdas_numero) if puhdas_numero else 0
+
+    except Exception as e:
+        print(f"get_score failed for {safe_name}: {e}")
+        return None
+    finally:
+        # Pakotetaan suurten numpy-matriisien vapautus
+        del screenshot_bgr, pre_processed, processable, final_img
+
+""" #vanha pytesseract looppi
 def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0, rotation=1):
     safe_name = "".join(c for c in str(player_name) if c.isalnum() or c in (' ', '_')).strip()
     try:
@@ -339,7 +507,7 @@ def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0, r
             else: scale = 2
             resized = cv2.resize(pre_processed, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
             blurred = cv2.blur(resized, (3, 3))
-            
+
         resized_orig = cv2.resize(screenshot_bgr, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
 
         # Dynamiikka
@@ -515,7 +683,7 @@ def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0, r
         # Tulosta poikkeus ja palauta None, jotta virhe erotetaan nollatuloksesta
         print(f"get_score failed for {safe_name}: {e}")
         return None
-
+"""
 def capture_pfp(playerID):
     time.sleep(1)
     try:

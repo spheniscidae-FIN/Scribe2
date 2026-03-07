@@ -1,4 +1,5 @@
 import os
+import tesserocr
 import win32gui # type: ignore
 import win32con # type: ignore
 import configparser
@@ -35,6 +36,7 @@ Grafana reads data from Postgre, sheets, and github
 
 
 # --- ALUSTUS JA POLUT ---
+os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(BASE_DIR, 'DATA', 'Config', 'STUFFnSHIET.ini')
 error_log_path = os.path.join(BASE_DIR, 'error_log.txt')
@@ -89,6 +91,10 @@ def register_f12_hotkey():
 
 def main_loop():
     set_console_always_on_top("Scribe")
+    input("Press enter")
+    # Alustetaan API kerran. PSM 7 on single line. 
+    # path-muuttuja on vapaaehtoinen jos TESSDATA_PREFIX on asetettu Windowsiin.
+
     try:
         init_db()
     except Exception as e:
@@ -115,18 +121,25 @@ def main_loop():
                     if mode == "weekly":
                         week = ["mon", "tues", "wed", "thur", "fri"]
                         for d in week:
-                            select_day(d)
-                            if read_daily(d):
-                                out(f"Reading day {d} complete")
+                            with tesserocr.PyTessBaseAPI(psm=tesserocr.PSM.SINGLE_LINE) as api:
+                                viimeisin_luku = total_ocr_calls = 0
+                                api.SetVariable("tessedit_char_whitelist", "0123456789.,")
+                                time.sleep(5)
+                                select_day(d)
+                                if read_daily(api=api, day=d):
+                                    out(f"Reading day {d} complete")
+                                else:
+                                    print("Ajo keskeytetty")
+                                    input("Paina Enter sulkeaksesi konsolin...")
+                                api.Clear()
+                    elif mode == "daily":
+                        with tesserocr.PyTessBaseAPI(psm=tesserocr.PSM.SINGLE_LINE) as api:
+                            if read_daily(api=api, day=day):
+                                out(f"Reading day {day} complete")
                             else:
                                 print("Ajo keskeytetty")
                                 input("Paina Enter sulkeaksesi konsolin...")
-                    elif mode == "daily":
-                        if read_daily(day):
-                            out(f"Reading day {day} complete")
-                        else:
-                            print("Ajo keskeytetty")
-                            input("Paina Enter sulkeaksesi konsolin...")
+                            viimeisin_luku = 0
                     else:
                         out("Day not been set, check INI")
                             

@@ -10,6 +10,7 @@ import ctypes
 from ctypes import wintypes as wt
 import pyperclip
 from datetime import datetime
+import tesserocr
 from seeker import screen_check
 from logger import out, tallenna_tulokset, tallenna_lopulliset_tulokset, add_player_to_db, player_exists_check
 from controller import check_escape_hotkey, py_click, scroll_down, scroll_up, recalibrate
@@ -159,7 +160,7 @@ def own_profile():
     out(f"--> Own profile found, setting plyer as {player} and returning to previous view.")
     return player, player_id
 
-def read_pos(pos):  
+def read_pos(pos, api):  
     if check_escape_hotkey():
         return 6, "6", 6, 6, "6"
     out(f"-->  Reading position {pos}.")
@@ -223,19 +224,20 @@ def read_pos(pos):
             return 6, "6", 6, 6, "6"
  
     out("--> Calling score reading pipeline:")
-    score, cycle = get_validated_score(score_read_area, player, pos=position)
+    score, cycle = get_validated_score(score_read_area, player, pos=position, api=api)
     out(f"--> score of {score} returned in {cycle} read cycles", force=True)
     out(f"----> Setting line index as {read_index}")
     return read_index, player, score, cycle, player_id
 
-def read_daily(day=""):
-    global read_index
-    read_index = 0
+def read_daily(api, day=""):
+    global read_index, viimeisin_luku, total_ocr_calls
+    read_index = viimeisin_luku = total_ocr_calls = 0
     score = 0
     player = ""
     ndx = 0
     kaikki_tulokset = []
     finished = False
+
     py_click(930, 930, duration=0.2)
     if check("top_reached"):
         scroll_down(16)
@@ -255,7 +257,7 @@ def read_daily(day=""):
                 break
             else:
                 #print("not at the top yet")
-                ndx, player, score, cycle, player_id = read_pos(6)
+                ndx, player, score, cycle, player_id = read_pos(6, api=api)
                 if ndx == 6 and player == "6" and score==6 and cycle==6:
                     return False
                 if ndx == 0 and player == "0" and score==0 and cycle==0:
@@ -284,7 +286,7 @@ def read_daily(day=""):
             break
         x+=1
     for j in range(5, 0, -1):
-        ndx, player, score, cycle, player_id = read_pos(j)
+        ndx, player, score, cycle, player_id = read_pos(j, api=api)
         if ndx == 6 and player == "6" and score==6 and cycle==6:
             return False
         tallenna_tulokset(ndx, score, player, cycle, player_id)
