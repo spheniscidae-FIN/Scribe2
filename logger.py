@@ -90,8 +90,8 @@ def format_time_centis(now: datetime) -> str:
                 hour = (hour + 1) % 24
     return f"{hour:02d}:{minute:02d}:{sec:02d}.{centis:02d}"
 
-def out(message: str = "", data=None, log: str = DEBUG_LOG_PATH):
-    if not DEBUG:
+def out(message: str = "", data=None, log: str = DEBUG_LOG_PATH, force=False):
+    if not DEBUG and not force:
         return
         
     now = datetime.now()

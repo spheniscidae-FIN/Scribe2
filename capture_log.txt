@@ -1,1 +1,2 @@
 is_player_profile_check = is_player_profile_check.png, 1068, 1242, 1133, 1296, 95
+wishes_check = wishes_check.png, 1048, 1228, 1150, 1302, 95

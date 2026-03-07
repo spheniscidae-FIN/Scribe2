@@ -143,6 +143,7 @@ def check_tag():
 def detect_position(pos=0):
     
     if check("is_player_profile_check"): return 1
+    elif check("wishes_check"): return 1
     elif check("very_popular_check"): return 2
     elif check("own_screen_check"): return 3
     elif check("low_level_check"): return 4
@@ -223,7 +224,7 @@ def read_pos(pos):
  
     out("--> Calling score reading pipeline:")
     score, cycle = get_validated_score(score_read_area, player, pos=position)
-    out(f"--> score of {score} returned in {cycle} read cycles")
+    out(f"--> score of {score} returned in {cycle} read cycles", force=True)
     out(f"----> Setting line index as {read_index}")
     return read_index, player, score, cycle, player_id
 

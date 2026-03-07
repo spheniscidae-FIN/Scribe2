@@ -63,77 +63,64 @@ total_ocr_calls = 0
 
 def get_validated_score(indicator_id, player, pos):
     global viimeisin_luku, total_ocr_calls
-    max_rotation = 3
-    max_retries, best_guess, rerun, total_cycles = 17, 0, 2, 0
+    max_rotation = 6  # Nostetaan kuuteen
+    max_retries, rerun, total_cycles = 17, 2, 0
+    best_guess = 0
+    
+    cv2.setNumThreads(1)
+
     try:
         for cycle in range(1, rerun + 1):
             for attempt in range(1, max_retries + 1):
                 mittaukset = []
+                
                 for x in range(max_rotation):
                     total_ocr_calls += 1
-                    total_cycles =+1
+                    total_cycles += 1 
+                    
+                    # get_score() hoitaa logiikkasi mukaan eri variaatiot:
+                    # x=0,1: Perus / x=2,3: Inversio / x=4: Harmaa / x=5: Harmaa-inversio
                     mittaus = get_score(indicator_id, player, attempts=attempt, rerun=cycle, pos=pos, rotation=x)
-                    # Säilytä None erillisenä arvona
-                    mittaukset.append(mittaus)
-                    time.sleep(0.02)
+                    
+                    if mittaus is not None and mittaus > 0:
+                        mittaukset.append(int(mittaus))
 
-                # --- LOGIIKKA 1: Kolmen suora (Early Exit) ---
-                if mittaukset[0] is not None and mittaukset[0] == mittaukset[1] == mittaukset[2] and mittaukset[0] > 0:
-                    luku = int(mittaukset[0])
-                    # sanity check: ei liian iso hyppy
+                if not mittaukset:
+                    continue
+
+                mittaukset.sort()
+                cnt = Counter(mittaukset)
+                most_common_value, occurrences = cnt.most_common(1)[0]
+                
+                # 1. EXIT CONDITION: Täydellinen 6/6 osuma
+                if occurrences == 6:
+                    luku = most_common_value
+                    if luku >= viimeisin_luku:
+                        viimeisin_luku = luku
+                        return luku, total_cycles
+
+                # 2. SEURAAVA TASO: 5/6 osuma sallitaan jatkokäsittelyyn
+                if occurrences >= 5:
+                    luku = most_common_value
                     if luku >= viimeisin_luku:
                         if viimeisin_luku == 0 or luku <= viimeisin_luku * 100:
                             viimeisin_luku = luku
                             return luku, total_cycles
-                        else:
-                            print(f"Varoitus: Epälooginen hyppy {luku} (edellinen {viimeisin_luku})")
-                            # jatketaan kokeiluja
 
-                # --- LOGIIKKA 2: Enemmistöäänestys (2/3) ---
-                # Suodata pois None-arvot ennen enemmistöä
-                valid_vals = [int(v) for v in mittaukset if v is not None and isinstance(v, (int, float)) and int(v) > 0]
-                if not valid_vals:
-                    # Ei yhtään kelvollista mittausta -> jatketaan
-                    gc.collect()
-                    time.sleep(0.1)
-                    continue
+                # 3. BEST GUESS VARASTO: Jos saatiin vähintään 4/6 (valinnainen kynnys)
+                # Voit pitää tämän 5/6:ssa jos haluat olla todella varma.
+                if occurrences >= 5:
+                    if most_common_value > best_guess:
+                        best_guess = most_common_value
 
-                cnt = Counter(valid_vals)
-                most_common_value, occurrences = cnt.most_common(1)[0]
-                luku = most_common_value if occurrences >= 2 else 0
-
-                if luku <= 0:
-                    gc.collect()
-                    time.sleep(0.1)
-                    continue
-
-                # Päivitetään paras arvaus (best_guess) vain jos järkevä
-                if luku > best_guess:
-                    if viimeisin_luku == 0 or luku <= viimeisin_luku * 100:
-                        best_guess = luku
-
-                # Validointi nousevuuden suhteen ja mahdollinen palautus
-                if luku >= viimeisin_luku:
-                    if viimeisin_luku > 0 and luku > viimeisin_luku * 100:
-                        print(f"Varoitus: Epälooginen hyppy {luku} (edellinen {viimeisin_luku})")
-                        gc.collect()
-                        time.sleep(0.1)
-                        continue
-
-                    viimeisin_luku = luku
-                    return luku, total_cycles
-
-                # Jos ei noudata nousevuutta, jatketaan mutta pidetään best_guess talteen
                 gc.collect()
-                time.sleep(0.1)
 
     except Exception as e:
-        print(f"Kriittinen virhe lukusyklissä: {e}")
+        print(f"Error: {e}")
 
-    # Lopuksi: palauta paras löydetty arvaus tai 0
-    if best_guess > 0:
-        if viimeisin_luku == 0 or best_guess <= viimeisin_luku * 100:
-            viimeisin_luku = best_guess
+    # Jos mikään ei antanut 6/6 tai 5/6, palautetaan best guess jos se on validi
+    if best_guess >= viimeisin_luku and best_guess > 0:
+        viimeisin_luku = best_guess
         return best_guess, total_cycles
 
     return 0, total_cycles
@@ -317,13 +304,16 @@ def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0, r
         if rerun == 1:
             # 1. Skaalataan reilusti yli (esim. 6x)
             if rotation == 0:
-                scale = 3
-            elif rotation == 1:
-                scale = 4
-            elif rotation == 2:
-                scale = 5
-            else:
                 scale = 2
+            elif rotation == 1:
+                scale = 3
+            elif rotation == 2:
+                scale = 4
+            elif rotation == 3:
+                scale = 5
+            elif rotation == 4:
+                scale = 6
+            else: scale = 2
                 
             overscaled = cv2.resize(pre_processed, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
 
@@ -337,15 +327,20 @@ def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0, r
         else:
             # PERUSREITTI (Kierros 1)
             if rotation == 0:
-                scale = 1.5
+                scale = 1
             elif rotation == 1:
                 scale = 2
             elif rotation == 2:
-                scale = 2.5
-            else:
-                scale = 2
+                scale = 3
+            elif rotation == 3:
+                scale = 4
+            elif rotation == 4:
+                scale = 5
+            else: scale = 2
             resized = cv2.resize(pre_processed, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
             blurred = cv2.blur(resized, (3, 3))
+            
+        resized_orig = cv2.resize(screenshot_bgr, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4)
 
         # Dynamiikka
         kernel = np.ones((2, 2), np.uint8)
@@ -364,7 +359,7 @@ def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0, r
         match attempts:
             case 1:
                 # Palauta alkuperäinen screenshot (mutta muunna grayscale ennen OCR)
-                final_img = screenshot_bgr
+                final_img = resized_orig
             case 2:
                 final_img = processable
             case 3:
@@ -506,7 +501,7 @@ def get_score(indicator_id, player_name="unknown", attempts=1, rerun=1, pos=0, r
         tulos_teksti = pytesseract.image_to_string(final_img, config=config_params)
 
         # debug_attempt erillisenä, jotta alkuperäinen attempts säilyy
-        debug_attempt = attempts + (7 if rerun == 2 else 0)
+        debug_attempt = attempts + (17 if rerun == 2 else 0)
         if DEBUG: cv2.imwrite(os.path.join(DEBUG_DIR, f"{safe_name}_proc_att{debug_attempt}.png"), final_img)
 
         # Poimi vain numerot (kokonaisluku)
