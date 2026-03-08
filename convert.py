@@ -6,18 +6,40 @@ from google import genai
 from google.genai import types
 
 # --- KONFIGURAATIO ---
-GEMINI_API_KEY = "AIzaSyDZxKGWLt-LpcrQWaFwmcc2ed9z_pOvJS4"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Polku JSON-tiedostoon
+KEYS_PATH = os.path.join(BASE_DIR, 'DATA', 'Config', 'GeminiAPI.json')
+def load_api_key():
+    try:
+        if not os.path.exists(KEYS_PATH):
+            print(f"!!! VIRHE: API-avainta ei löytynyt polusta: {KEYS_PATH}")
+            return None
+        with open(KEYS_PATH, 'r') as f:
+            data = json.load(f)
+            return data.get("GEMINI_API_KEY")
+    except Exception as e:
+        print(f"!!! Virhe avaimen luvussa: {e}")
+        return None
+
+GEMINI_API_KEY = load_api_key()
 UPLOAD_DIR = "UPLOADS"
 RESULTS_DIR = "RESULTS"
-CATEGORIES = ["POWER", "DONATIONS", "KILLS"]
+# LISÄTTY: SATURDAY kategoriaan
+CATEGORIES = ["POWER", "DONATIONS", "KILLS", "SATURDAY"]
 
 # Alustetaan client
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 def process_image_with_retry(image_path, category, retries=3):
+    # MUOKATTU PROMPT: Lisätty ohjeistus klaanitagin ja liiton nimen sivuuttamisesta
     prompt = f"""
     Analyze this game ranking screenshot for the category: {category}.
     Extract: Rank (integer), Player Name (string), and the numerical Value (integer).
+    
+    IMPORTANT: 
+    - When extracting the 'Player Name', IGNORE the alliance tag and name like '[FRB3] FireBringers'. 
+    - Return only the player's own nickname.
+    
     Return ONLY a JSON array of objects. 
     Example: [{{"rank": 1, "name": "Player1", "value": 1500000}}]
     """
@@ -28,7 +50,7 @@ def process_image_with_retry(image_path, category, retries=3):
                 image_bytes = f.read()
 
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-2.5-flash', # Huom: vaihdettu vakaaseen mallinimeen jos gemini-2.5 ei ole saatavilla
                 contents=[
                     prompt,
                     types.Part.from_bytes(data=image_bytes, mime_type="image/png")
@@ -108,7 +130,7 @@ def main():
                 name = entry.get('name')
                 if not name: continue
                 
-                # Puhdistetaan arvo (poistetaan mahdolliset AI:n jättämät pisteet tai pilkut)
+                # Puhdistetaan arvo
                 val_raw = str(entry.get('value', '0'))
                 val_clean = "".join(filter(str.isdigit, val_raw))
                 current_val = int(val_clean) if val_clean else 0
