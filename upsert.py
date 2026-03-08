@@ -3,33 +3,40 @@ import csv
 import psycopg2
 import sqlite3
 import gspread
+import json
 from datetime import datetime
 from collections import defaultdict
 from oauth2client.service_account import ServiceAccountCredentials
 
-# --- KONFIGURAATIO ---
-DB_CONFIG = {
-    "dbname": "rok_stats", "user": "upsert_user", 
-    "password": "Kissahemuli666!", "host": "192.168.68.63", "port": "5432"
-}
-PLAYERS_DB_SQLITE = "Q:/Skriptit/Scribe2/DATA/DATABASE/Players.db" 
-RESULTS_FOLDER = "./results"
-SHEET_NAME = "Squadpower"
-JSON_KEY_PATH = "scribe-sync-488917-4d7c6c9d0021.json"
+# --- KONFIGURAATION LATAUS ---
+def load_config():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(base_dir, "DB_CONFIG.json")
+    
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Konfiguraatiotiedostoa {config_path} ei löydy!")
+    
+    with open(config_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+CONFIG = load_config()
+
+# Erotetaan PostgreSQL-yhteystiedot omaan sanakirjaansa
+DB_PARAMS = {k: CONFIG[k] for k in ["dbname", "user", "password", "host", "port"]}
 
 class RoKDatabaseManager:
     def __init__(self):
-        self.pg_conn = psycopg2.connect(**DB_CONFIG)
+        # Käytetään dynaamisesti ladattuja asetuksia
+        self.pg_conn = psycopg2.connect(**DB_PARAMS)
         self.pg_cur = self.pg_conn.cursor()
+        
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name(JSON_KEY_PATH, scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_name(CONFIG['json_key_path'], scope)
         self.gc = gspread.authorize(creds)
-        print("✅ Vaihe 0: Yhteydet avattu.")
+        print("✅ Vaihe 0: Yhteydet avattu (JSON-konfiguraatio käytössä).")
 
     def normalize_id(self, pid):
-        """Varmistaa, että 0 ja O eivät riko ID-vertailua."""
         if not pid: return ""
-        # Pakotetaan kaikki muotoon, jossa käytetään nollaa (0) 'O':n sijaan kriittisessä kohdassa
         return str(pid).strip().upper().replace("-0O", "-00")
 
     def run_sync(self):
@@ -40,32 +47,33 @@ class RoKDatabaseManager:
             't1': 0.0, 't2': 0.0
         })
 
-        # 1. HAETAAN NIMET
-        sl_conn = sqlite3.connect(PLAYERS_DB_SQLITE)
+        # 1. HAETAAN NIMET (SQLITE)
+        sl_conn = sqlite3.connect(CONFIG['sqlite_path'])
         sl_cur = sl_conn.cursor()
         sl_cur.execute("SELECT player_id, name FROM players")
         name_registry = {self.normalize_id(pid): name.strip() for pid, name in sl_cur.fetchall() if pid}
         sl_conn.close()
         print(f"✅ Vaihe 1: Master-nimet ladattu ({len(name_registry)} kpl).")
 
-        # 2. LUETAAN CSV-TIEDOSTOT (Ilman viikkolistoja)
+        # 2. LUETAAN CSV-TIEDOSTOT
         day_map = {
             '_mon.csv': 'mon', '_tues.csv': 'tue', '_wed.csv': 'wed', 
             '_thur.csv': 'thu', '_fri.csv': 'fri', '_sat.csv': 'sat'
         }
         
-        files = [f for f in os.listdir(RESULTS_FOLDER) if f.endswith('.csv')]
+        res_folder = CONFIG['results_folder']
+        files = [f for f in os.listdir(res_folder) if f.endswith('.csv')]
+        
+        # Haetaan viikon numero tiedostonimestä tai nykyisestä päivästä
         week_num = next((int(f.split('_')[0]) for f in files if '_' in f and f.split('_')[0].isdigit()), now.isocalendar()[1])
         
-        print(f"🚀 Vaihe 2: Luetaan CSV-data (Viikko {week_num})...")
+        print(f"🚀 Vaihe 2: Luetaan CSV-data kansiosta {res_folder} (Viikko {week_num})...")
         for filename in files:
             tag = filename.lower()
-            # SKIPPATAAN VIIKKOLISTAT (Häröpallon välttämiseksi)
             if "_wk" in tag or "week" in tag:
-                print(f"   - Ohitetaan turha viikkolista: {filename}")
                 continue
 
-            path = os.path.join(RESULTS_FOLDER, filename)
+            path = os.path.join(res_folder, filename)
             with open(path, mode='r', encoding='utf-8') as f:
                 content = f.read(2048)
                 delim = ';' if ';' in content else ','
@@ -73,11 +81,11 @@ class RoKDatabaseManager:
                 reader = csv.DictReader(f, delimiter=delim)
                 
                 for row in reader:
+                    # Siivotaan sarakkeiden nimet (poistetaan erikoismerkit)
                     row = {str(k).encode('ascii', 'ignore').decode().strip().lower(): v for k, v in row.items() if k}
                     pid = self.normalize_id(row.get('player_id', ''))
                     if not pid: continue
 
-                    # Asetetaan nimi master-rekisteristä
                     master_data[pid]['name'] = name_registry.get(pid, row.get('playername') or row.get('name') or master_data[pid]['name'])
                     
                     val = self.safe_int(row.get('value') or row.get('score') or 0)
@@ -90,23 +98,26 @@ class RoKDatabaseManager:
 
         # 3. SHEETS (T1/T2)
         print("📊 Vaihe 3: Haetaan T1/T2 arvot...")
-        sheet = self.gc.open(SHEET_NAME).worksheet("Upsert")
+        # Huom: Käytetään JSONista 'sheet_name' -asetusta
+        sheet = self.gc.open(CONFIG['sheet_name']).worksheet("Upsert")
         for s_row in sheet.get_all_values():
             s_pid = self.normalize_id(s_row[0])
             if s_pid in master_data:
                 master_data[s_pid]['t1'] = self.safe_float(s_row[2])
                 master_data[s_pid]['t2'] = self.safe_float(s_row[3])
 
-        # 4. TALLENNUS JA LEGACY
+        # 4. TALLENNUS JA LEGACY (POSTGRESQL)
         print(f"💾 Vaihe 4: Kirjoitetaan kantaan ({len(master_data)} pelaajaa)...")
         power_ids = set()
         for pid, d in master_data.items():
             if d['power'] > 0: power_ids.add(pid)
             
             # Upsert active_players
-            self.pg_cur.execute("INSERT INTO active_players (player_id, name, last_seen) VALUES (%s, %s, %s) "
-                                "ON CONFLICT (player_id) DO UPDATE SET name = EXCLUDED.name, last_seen = EXCLUDED.last_seen", 
-                                (pid, d['name'], now))
+            self.pg_cur.execute(
+                "INSERT INTO active_players (player_id, name, last_seen) VALUES (%s, %s, %s) "
+                "ON CONFLICT (player_id) DO UPDATE SET name = EXCLUDED.name, last_seen = EXCLUDED.last_seen", 
+                (pid, d['name'], now)
+            )
 
             # Upsert snapshots
             vs_total = sum(d['vs'].values())
@@ -125,7 +136,7 @@ class RoKDatabaseManager:
         
         self.pg_conn.commit()
         
-        # LEGACY-TARKISTUS
+        # 5. LEGACY-TARKISTUS
         print("🧹 Vaihe 5: Legacy-tarkistus...")
         self.pg_cur.execute("SELECT player_id, name FROM active_players")
         for p_id, db_name in self.pg_cur.fetchall():
@@ -152,10 +163,12 @@ class RoKDatabaseManager:
         self.pg_conn.close()
 
 if __name__ == "__main__":
-    mgr = RoKDatabaseManager()
     try:
+        mgr = RoKDatabaseManager()
         mgr.run_sync()
+    except Exception as e:
+        print(f"❌ KRIITTINEN VIRHE: {e}")
     finally:
-        mgr.close()
+        if 'mgr' in locals():
+            mgr.close()
     input("\nValmis...")
-

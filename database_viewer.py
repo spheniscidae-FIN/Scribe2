@@ -3,7 +3,7 @@ import sqlite3
 import os
 import psycopg2
 import datetime
-
+import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -16,14 +16,27 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
-# --- KONFIGURAATIO ---
-DB_CONFIG = {
-    "dbname": "rok_stats", "user": "upsert_user", 
-    "password": "Kissahemuli666!", "host": "192.168.68.63", "port": "5432"
-}
-SHEET_NAME = "Squadpower"
-WORKSHEET_NAME = "Database"
-GITHUB_BASE_URL = "https://spheniscidae-fin.github.io/Scribe2/DATA/Database/Profile_pictures"
+# --- KONFIGURAATION LATAUS ---
+def load_config():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(base_dir, "DB_CONFIG.json")
+    
+    if not os.path.exists(config_path):
+        print("VIRHE: DB_CONFIG.json ei löydy! Käytetään oletusarvoja.")
+        return {
+            "dbname": "rok_stats", "user": "upsert_user", 
+            "password": "", "host": "localhost", "port": "5432",
+            "sheet_name": "Squadpower", "worksheet_name": "Database",
+            "github_base_url": ""
+        }
+    
+    with open(config_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+CONFIG = load_config()
+
+# Erillinen sanakirja psycopg2:lle (sisältää vain yhteystiedot)
+DB_PARAMS = {k: CONFIG[k] for k in ["dbname", "user", "password", "host", "port"]}
 
 # --- DIALOGI: PELAAJAN LISÄÄMINEN KÄSIN ---
 class AddPlayerDialog(QDialog):
@@ -56,7 +69,7 @@ class AddPlayerDialog(QDialog):
             "id": self.id_input.text().strip()
         }
 
-# --- UUSI DIALOGI: LEGACY-PELAAJIEN LISTAAMINEN ---
+# --- DIALOGI: LEGACY-PELAAJIEN LISTAAMINEN ---
 class LegacyListDialog(QDialog):
     def __init__(self, players_to_remove, parent=None):
         super().__init__(parent)
@@ -160,8 +173,6 @@ class DatabaseViewer(QMainWindow):
         self.all_rows = []
         self.load_data()
 
-    # --- TOIMINNALLISUUDET ---
-
     def add_player_manual(self):
         dialog = AddPlayerDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -191,8 +202,8 @@ class DatabaseViewer(QMainWindow):
 
     def cleanup_legacy(self):
         try:
-            # 1. Hae legacy-ID:t PostgreSQL:stä
-            pg_conn = psycopg2.connect(**DB_CONFIG)
+            # Käyttää ladattua DB_PARAMS -konfiguraatiota
+            pg_conn = psycopg2.connect(**DB_PARAMS)
             pg_cur = pg_conn.cursor()
             pg_cur.execute("SELECT player_id FROM legacy_players")
             legacy_ids = [str(row[0]) for row in pg_cur.fetchall()]
@@ -203,7 +214,6 @@ class DatabaseViewer(QMainWindow):
                 QMessageBox.information(self, "Siivous", "Legacy-kannassa ei ole poistettavia pelaajia.")
                 return
 
-            # 2. Tarkista ketkä näistä löytyvät paikallisesta SQLite-kannasta
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             placeholders = ', '.join(['?'] * len(legacy_ids))
@@ -216,17 +226,14 @@ class DatabaseViewer(QMainWindow):
                 QMessageBox.information(self, "Siivous", "Paikallisessa kannassa ei ole legacy-pelaajia.")
                 return
 
-            # 3. Näytä esikatseludialogi
             dialog = LegacyListDialog(players_to_remove, self)
             if dialog.exec() == QDialog.DialogCode.Accepted:
-                # 4. Suorita poisto
                 conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
                 cursor.executemany("DELETE FROM players WHERE player_id = ?", [(pid,) for _, pid in players_to_remove])
                 removed = cursor.rowcount
                 conn.commit()
                 conn.close()
-                
                 self.load_data()
                 QMessageBox.information(self, "Onnistui", f"Siivous valmis. Poistettu {removed} pelaajaa.")
 
@@ -304,14 +311,14 @@ class DatabaseViewer(QMainWindow):
             sheet_data = [["player_id", "Name", "pfp-path"]]
             for name, tag, p_id, joined, pfp_path in self.all_rows:
                 filename = os.path.basename(pfp_path) if pfp_path else "default.png"
-                pfp_url = f"{GITHUB_BASE_URL}/{filename}"
+                pfp_url = f"{CONFIG['github_base_url']}/{filename}"
                 sheet_data.append([str(p_id), str(name), pfp_url])
 
             scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
             creds = ServiceAccountCredentials.from_json_keyfile_name(self.json_key, scope)
             client = gspread.authorize(creds)
-            spreadsheet = client.open(SHEET_NAME)
-            sheet = spreadsheet.worksheet(WORKSHEET_NAME)
+            spreadsheet = client.open(CONFIG['sheet_name'])
+            sheet = spreadsheet.worksheet(CONFIG['worksheet_name'])
             sheet.clear()
             sheet.update(sheet_data, 'A1')
 
