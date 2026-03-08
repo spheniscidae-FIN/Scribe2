@@ -8,6 +8,8 @@ import time
 import global_var
 import ctypes
 import winsound
+import sys
+import subprocess
 from datetime import datetime, timedelta
 from seeker import screen_check
 from logger import out, init_db
@@ -120,28 +122,22 @@ def main_loop():
                 if check("daily_rank_window_check") or check("SVS_ranking_check"):
                     if mode == "weekly":
                         week = ["mon", "tues", "wed", "thur", "fri"]
-                        for d in week:
-                            with tesserocr.PyTessBaseAPI(psm=tesserocr.PSM.SINGLE_LINE) as api:
-                                viimeisin_luku = total_ocr_calls = 0
-                                api.SetVariable("tessedit_char_whitelist", "0123456789.,")
-                                time.sleep(5)
-                                select_day(d)
-                                if read_daily(api=api, day=d):
-                                    out(f"Reading day {d} complete")
-                                else:
-                                    print("Ajo keskeytetty")
-                                    input("Paina Enter sulkeaksesi konsolin...")
-                                api.Clear()
-                    elif mode == "daily":
-                        with tesserocr.PyTessBaseAPI(psm=tesserocr.PSM.SINGLE_LINE) as api:
-                            if read_daily(api=api, day=day):
-                                out(f"Reading day {day} complete")
+                        for day in week:
+                            process = subprocess.Popen([sys.executable, "reader.py", day])
+                            process.wait()
+                            if process.returncode == 0:
+                                print(f">>> Päivä {day} suoritettu onnistuneesti.")
                             else:
-                                print("Ajo keskeytetty")
-                                input("Paina Enter sulkeaksesi konsolin...")
-                            viimeisin_luku = 0
-                    else:
-                        out("Day not been set, check INI")
+                                print(f">>> Virhe päivän {day} luvussa (Exit code: {process.returncode})")
+                                break # Lopetetaan viikko, jos jokin päivä kaatuu
+                                
+                    elif mode == "daily":
+                        process = subprocess.Popen([sys.executable, "reader.py", day])
+                        process.wait()
+                        if process.returncode == 0:
+                            print(f">>> Päivä {day} suoritettu onnistuneesti.")
+                        else:
+                            print(f">>> Virhe päivän {day} luvussa (Exit code: {process.returncode})")
                             
                     pyautogui.mouseUp(button='left')
                     pyautogui.mouseUp(button='right')

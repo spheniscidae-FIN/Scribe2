@@ -11,6 +11,7 @@ from ctypes import wintypes as wt
 import pyperclip
 from datetime import datetime
 import tesserocr
+import sys
 from seeker import screen_check
 from logger import out, tallenna_tulokset, tallenna_lopulliset_tulokset, add_player_to_db, player_exists_check
 from controller import check_escape_hotkey, py_click, scroll_down, scroll_up, recalibrate
@@ -325,3 +326,31 @@ def select_day(day="mon"):
             py_click(target="your_alliance_checkmark")
             py_click(target=day)
     return True
+
+def run_reader():
+    # Luetaan päivä komentoriviparametrista
+    if len(sys.argv) < 2:
+        print("Virhe: Päivä-parametri puuttuu")
+        sys.exit(1)
+        
+    target_day = sys.argv[1]
+    select_day(target_day)
+    # Alustetaan API täysin puhtaalta pöydältä tässä prosessissa
+    with tesserocr.PyTessBaseAPI(psm=tesserocr.PSM.SINGLE_LINE) as api:
+        api.SetVariable("tessedit_char_whitelist", "0123456789.,")
+        
+        # Kutsutaan varsinaista lukufunktiota
+        # (Varmista että read_daily ja muut tarvittavat funktiot ovat tässä tiedostossa)
+        try:
+            success = read_daily(api=api, day=target_day)
+            if success:
+                sys.exit(0) # Onnistuminen
+            else:
+                sys.exit(1) # Epäonnistuminen
+        except Exception as e:
+            print(f"Kriittinen virhe lukijassa: {e}")
+            sys.exit(1)
+        api.Clear()
+
+if __name__ == "__main__":
+    run_reader()
