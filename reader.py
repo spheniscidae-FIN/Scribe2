@@ -119,9 +119,7 @@ def tag_player(index=0):
     else:
         out("pfp read failed, skipping database write")
     return tag, playerID
-# JG1000
-# whatyousay
-# flatulax
+
 
 def check_tag():
     if check("no_tag_check"):
