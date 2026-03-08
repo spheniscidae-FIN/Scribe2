@@ -2,7 +2,7 @@ import sys
 import os
 import csv
 import sqlite3
-import difflib  # Lisätty difflib import tähän alkuun selkeyden vuoksi
+import difflib
 from collections import defaultdict
 
 from PyQt6.QtWidgets import (
@@ -14,12 +14,10 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
 # --- POIKKEUSTAPAUSLISTA (ALIAS-VERTAILU) ---
-# Tänne lisätään parit: 'ocr_tunnistus': 'oikea_nimi_tietokannassa'
 NAME_ALIASES = {
     'tapi': 'ᴛᴀᴘɪ',
     'tap1': 'ᴛᴀᴘɪ',
     'chick': 'chicken',
-    # Voit täyttää tätä tarpeen mukaan
 }
 
 # ---------------- NUMERIIKKAA TUKEVA ITEM ----------------
@@ -40,7 +38,7 @@ class ResultsEditor(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Scribe – Results Editor (AI Enhanced)")
-        self.setMinimumSize(1250, 800)
+        self.setMinimumSize(1350, 850)
 
         self.font_size = 12
         base = os.path.dirname(os.path.abspath(__file__))
@@ -48,10 +46,12 @@ class ResultsEditor(QMainWindow):
         self.results_path = os.path.join(base, "results")
         self.players_db_path = os.path.join(base, "DATA", "DATABASE", "Players.db")
 
+        # PÄIVITETTY: Patterns sisältää nyt AI_IMPORT ja lauantain tulokset
         self.patterns = {
             "MA": "_mon.csv", "TI": "_tues.csv", "KE": "_wed.csv",
             "TO": "_thur.csv", "PE": "_fri.csv", "LA": "_sat.csv",
             "VKO": "_wk.csv",
+            "AI_IMPORT": "AI_import_results.csv", # Convert.py tuotos ohjataan tähän
             "POWER": "power_results.csv",
             "DONATIONS": "donations_results.csv",
             "KILLS": "kills_results.csv"
@@ -64,16 +64,55 @@ class ResultsEditor(QMainWindow):
         top = QHBoxLayout()
         self.refresh_btn = QPushButton("Update all")
         self.refresh_btn.clicked.connect(self.load_all_csv)
-        self.generate_la_btn = QPushButton("Generate Saturday")
+        
+        self.generate_la_btn = QPushButton("Generate Saturday (Calc)")
         self.generate_la_btn.clicked.connect(self.generate_la_scores)
-        self.generate_vko_btn = QPushButton("Generate Week")
+        
+        self.generate_vko_btn = QPushButton("Generate Week (Calc)")
         self.generate_vko_btn.clicked.connect(self.generate_weekly_summary)
-        self.save_csv_btn = QPushButton("Save active tab as CSV")
+
+        # UUDET NAPIT AI-IMPORTIA VARTEN
+        self.export_vko_btn = QPushButton("Export AI -> Week")
+        self.export_vko_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #004d40; 
+                color: #e0f2f1; 
+                font-weight: bold; 
+                border: 1px solid #00695c;
+                border-radius: 4px;
+                padding: 4px;
+            }
+            QPushButton:hover {
+                background-color: #00695c;
+            }
+        """)
+        self.export_vko_btn.clicked.connect(lambda: self.export_ai_to_target("VKO"))
+
+        self.export_la_btn = QPushButton("Export AI -> Saturday")
+        self.export_la_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #5d4037; 
+                color: #efebe9; 
+                font-weight: bold; 
+                border: 1px solid #6d4c41;
+                border-radius: 4px;
+                padding: 4px;
+            }
+            QPushButton:hover {
+                background-color: #6d4c41;
+            }
+        """)
+        self.export_la_btn.clicked.connect(lambda: self.export_ai_to_target("LA"))
+
+        self.save_csv_btn = QPushButton("Save active tab")
         self.save_csv_btn.clicked.connect(self.save_active_csv)
+        
         self.validate_btn = QPushButton("Validate Data")
         self.validate_btn.clicked.connect(self.validate_active_table)
 
         top.addWidget(self.refresh_btn)
+        top.addWidget(self.export_vko_btn)
+        top.addWidget(self.export_la_btn)
         top.addWidget(self.generate_la_btn)
         top.addWidget(self.generate_vko_btn)
         top.addWidget(self.save_csv_btn)
@@ -85,7 +124,8 @@ class ResultsEditor(QMainWindow):
         layout.addWidget(self.tabs)
 
         self.tables = {}
-        all_tab_names = ["MA", "TI", "KE", "TO", "PE", "LA", "VKO", "POWER", "DONATIONS", "KILLS"]
+        # LISÄTTY AI_IMPORT välilehtien listaan
+        all_tab_names = ["MA", "TI", "KE", "TO", "PE", "LA", "VKO", "AI_IMPORT", "POWER", "DONATIONS", "KILLS"]
         
         for tab_name in all_tab_names:
             table = QTableWidget()
@@ -94,8 +134,9 @@ class ResultsEditor(QMainWindow):
             table.setEditTriggers(QTableWidget.EditTrigger.AllEditTriggers)
             table.setSortingEnabled(True)
             
-            is_ai = tab_name in ["POWER", "DONATIONS", "KILLS"]
-            table.verticalHeader().setDefaultSectionSize(45 if is_ai else 90)
+            # AI-pohjaiset taulut (tiheämpi riviväli)
+            is_ai_style = tab_name in ["POWER", "DONATIONS", "KILLS", "AI_IMPORT"]
+            table.verticalHeader().setDefaultSectionSize(45 if is_ai_style else 90)
 
             header = table.horizontalHeader()
             header.setSectionResizeMode(0, header.ResizeMode.ResizeToContents)
@@ -129,17 +170,13 @@ class ResultsEditor(QMainWindow):
         except: return {}
 
     def find_pid_by_name(self, name: str):
-        """Hakee player_id:n hyödyntäen aliaksia, tarkkaa hakua ja fuzzy matchia."""
         if not name: return None
         raw_name = name.strip()
         search_name = raw_name.lower()
         
-        # 1. TARKISTETAAN ALIAS-LISTA (Poikkeustapaukset)
         if search_name in NAME_ALIASES:
-            raw_name = NAME_ALIASES[search_name] # Vaihdetaan etsittävä nimi viralliseen muotoon
-            print(f"Alias Match: '{name}' -> '{raw_name}'")
+            raw_name = NAME_ALIASES[search_name]
 
-        # 2. Yritetään tarkkaa hakua tietokannasta (NOCASE huomioi t-kirjaimet jne)
         if os.path.exists(self.players_db_path):
             try:
                 conn = sqlite3.connect(self.players_db_path)
@@ -150,17 +187,14 @@ class ResultsEditor(QMainWindow):
                 if result: return str(result[0])
             except: pass
 
-        # 3. Fuzzy Match (viimeinen oljenkorsi)
-        db_players = self.get_all_names_from_db() # { "Nimi": "ID" }
+        db_players = self.get_all_names_from_db()
         if not db_players: return None
         
         all_db_names = list(db_players.keys())
         matches = difflib.get_close_matches(raw_name, all_db_names, n=1, cutoff=0.6)
         
         if matches:
-            best_match = matches[0]
-            print(f"Fuzzy Match: '{name}' -> '{best_match}'")
-            return db_players[best_match]
+            return db_players[matches[0]]
             
         return None
 
@@ -170,12 +204,46 @@ class ResultsEditor(QMainWindow):
         path = os.path.join(folder, f"{player_id}_pfp.png")
         return path if os.path.exists(path) else None
 
-    def get_current_week_prefix(self):
-        if not os.path.isdir(self.results_path): return ""
-        for fname in os.listdir(self.results_path):
-            if "_" in fname and fname.split("_")[0].isdigit():
-                return fname.split("_")[0] + "_"
-        return ""
+    def export_ai_to_target(self, target_tab):
+        """Siirtää puhdistetun datan AI_IMPORT-välilehdeltä kohteeseen."""
+        source = self.tables["AI_IMPORT"]
+        target = self.tables[target_tab]
+        
+        if source.rowCount() == 0:
+            QMessageBox.warning(self, "Export", "AI_IMPORT is empty!")
+            return
+
+        confirm = QMessageBox.question(self, "Export", f"Copy all rows from AI_IMPORT to {target_tab}?", 
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        if confirm == QMessageBox.StandardButton.No: return
+
+        target.setRowCount(0)
+        target.blockSignals(True)
+        
+        for r in range(source.rowCount()):
+            target.insertRow(r)
+            # Kopioidaan Rank, Name, Value, ID (sarakkeet 1, 2, 3, 4)
+            for c in range(1, 5):
+                item = source.item(r, c)
+                val = item.text() if item else ""
+                if c in (1, 3):
+                    target.setItem(r, c, NumericItem(val))
+                else:
+                    target.setItem(r, c, QTableWidgetItem(val))
+            
+            # PFP-kuva
+            pid = target.item(r, 4).text()
+            pfp_label = QLabel()
+            pfp_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            p_path = self.get_pfp_path(pid)
+            if p_path:
+                pix = QPixmap(p_path).scaled(75, 75, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                pfp_label.setPixmap(pix)
+            target.setCellWidget(r, 0, pfp_label)
+
+        target.blockSignals(False)
+        target.resizeRowsToContents()
+        self.tabs.setCurrentWidget(target.parentWidget())
 
     def update_table_fonts(self):
         font = self.font()
@@ -197,9 +265,10 @@ class ResultsEditor(QMainWindow):
 
     def find_csv(self, pattern: str):
         if not os.path.isdir(self.results_path): return None
-        if "_results.csv" in pattern:
-            p = os.path.join(self.results_path, pattern)
-            return p if os.path.exists(p) else None
+        # Tarkka osuma ensin
+        p = os.path.join(self.results_path, pattern)
+        if os.path.exists(p): return p
+        # Sitten haku päätteellä
         for fname in os.listdir(self.results_path):
             if fname.lower().endswith(pattern.lower()):
                 return os.path.join(self.results_path, fname)
@@ -215,7 +284,8 @@ class ResultsEditor(QMainWindow):
         table.setRowCount(0)
         table.blockSignals(True)
         tab_name = next(k for k, v in self.tables.items() if v == table)
-        is_ai = tab_name in ["POWER", "DONATIONS", "KILLS"]
+        # Nyt myös AI_IMPORT ja LA/VKO ladataan AI-rakenteella
+        is_ai_format = tab_name in ["POWER", "DONATIONS", "KILLS", "AI_IMPORT", "LA", "VKO"]
 
         try:
             try:
@@ -230,28 +300,34 @@ class ResultsEditor(QMainWindow):
                 if not row: continue
                 row_idx = table.rowCount()
                 table.insertRow(row_idx)
-                pid = None
 
-                if is_ai:
-                    rank, name, value = row[0], row[1], row[2]
+                if is_ai_format:
+                    # AI-tiedostoissa yleensä: Rank; Name; Value; (mahdollinen ID)
+                    rank = row[0] if len(row) > 0 else ""
+                    name = row[1] if len(row) > 1 else ""
+                    val = row[2] if len(row) > 2 else ""
+                    # Automaattinen ID-haku jos puuttuu
                     pid = row[3] if len(row) > 3 and row[3].strip() else self.find_pid_by_name(name)
+                    
                     table.setItem(row_idx, 1, NumericItem(rank))
                     table.setItem(row_idx, 2, QTableWidgetItem(name))
-                    table.setItem(row_idx, 3, NumericItem(value))
+                    table.setItem(row_idx, 3, NumericItem(val))
                     table.setItem(row_idx, 4, QTableWidgetItem(pid if pid else ""))
                 else:
+                    # Perinteinen muoto: Index; Name; Score; ID
                     if len(row) < 4: continue
-                    idx, name, score, pid = row
-                    table.setItem(row_idx, 1, NumericItem(idx))
-                    table.setItem(row_idx, 2, QTableWidgetItem(name))
-                    table.setItem(row_idx, 3, NumericItem(score))
-                    table.setItem(row_idx, 4, QTableWidgetItem(pid))
+                    table.setItem(row_idx, 1, NumericItem(row[0]))
+                    table.setItem(row_idx, 2, QTableWidgetItem(row[1]))
+                    table.setItem(row_idx, 3, NumericItem(row[2]))
+                    table.setItem(row_idx, 4, QTableWidgetItem(row[3]))
 
+                # PFP-kuvan asetus
+                pid = table.item(row_idx, 4).text()
                 pfp_label = QLabel()
                 pfp_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 p_path = self.get_pfp_path(pid)
                 if p_path:
-                    size = 40 if is_ai else 75
+                    size = 40 if is_ai_format else 75
                     pix = QPixmap(p_path).scaled(size, size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
                     pfp_label.setPixmap(pix)
                 table.setCellWidget(row_idx, 0, pfp_label)
@@ -265,33 +341,31 @@ class ResultsEditor(QMainWindow):
         tab_name = self.tabs.tabText(self.tabs.currentIndex())
         pattern = self.patterns.get(tab_name)
         path = self.find_csv(pattern)
+        
         if not path:
-            prefix = self.get_current_week_prefix() or "1_"
-            fname = pattern if "_results" in pattern else f"{prefix}{pattern.lstrip('_')}"
+            fname = pattern if "_results" in pattern else f"1_{pattern.lstrip('_')}"
             path = os.path.join(self.results_path, fname)
 
         table = self.tables[tab_name]
-        is_ai = tab_name in ["POWER", "DONATIONS", "KILLS"]
+        is_ai_style = tab_name in ["POWER", "DONATIONS", "KILLS", "AI_IMPORT"]
 
         try:
             with open(path, "w", encoding="utf-8", newline="") as f:
                 writer = csv.writer(f, delimiter=';')
-                if is_ai: writer.writerow(["rank", "name", "value", "player_id"])
+                if is_ai_style: writer.writerow(["rank", "name", "value", "player_id"])
                 else: writer.writerow(["Index", "Playername", "Score", "player_id"])
+                
                 for r in range(table.rowCount()):
-                    row_data = [
+                    writer.writerow([
                         table.item(r, 1).text() if table.item(r, 1) else "",
                         table.item(r, 2).text() if table.item(r, 2) else "",
                         table.item(r, 3).text() if table.item(r, 3) else "",
                         table.item(r, 4).text() if table.item(r, 4) else ""
-                    ]
-                    writer.writerow(row_data)
-            QMessageBox.information(self, "Success", f"Saved to:\n{os.path.basename(path)}")
+                    ])
+            QMessageBox.information(self, "Success", f"Saved to {os.path.basename(path)}")
         except Exception as e: QMessageBox.critical(self, "Error", str(e))
 
     def generate_la_scores(self):
-        # Kerätään Ma-Pe pisteet player_id:n mukaan
-        # Käytetään player_id:tä (sarake 4) nimen sijaan, koska se on yksilöllinen
         weekday_scores = defaultdict(int)
         for day in ["MA", "TI", "KE", "TO", "PE"]:
             table = self.tables[day]
@@ -299,53 +373,41 @@ class ResultsEditor(QMainWindow):
                 try:
                     pid = table.item(row, 4).text().strip()
                     if pid:
-                        score_text = table.item(row, 3).text().replace(" ", "").replace(".", "")
-                        weekday_scores[pid] += int(score_text)
-                except:
-                    pass
+                        score = int(table.item(row, 3).text().replace(" ", "").replace(".", ""))
+                        weekday_scores[pid] += score
+                except: pass
 
         vko_t = self.tables["VKO"]
         la_t = self.tables["LA"]
         la_t.setRowCount(0)
         la_t.blockSignals(True)
 
-        # Lasketaan Lauantai: Viikkoarvo - (Ma+Ti+Ke+To+Pe)
         for row in range(vko_t.rowCount()):
             try:
                 name = vko_t.item(row, 2).text()
-                total_text = vko_t.item(row, 3).text().replace(" ", "").replace(".", "")
-                total = int(total_text)
+                total = int(vko_t.item(row, 3).text().replace(" ", "").replace(".", ""))
                 pid = vko_t.item(row, 4).text().strip()
-                
-                # Vähennetään viikkoarvosta arkipäivien summa
-                # Jos pelaajalla ei ole arkipisteitä, vähennetään 0
                 la_score = total - weekday_scores.get(pid, 0)
-                
-                # Jos tulos on negatiivinen (datavirhe), asetetaan nollaksi tai pidetään tulos
-                # la_score = max(0, la_score) 
 
                 idx = la_t.rowCount()
                 la_t.insertRow(idx)
-                
-                # Täytetään rivi
                 la_t.setItem(idx, 1, NumericItem(str(idx + 1)))
                 la_t.setItem(idx, 2, QTableWidgetItem(name))
                 la_t.setItem(idx, 3, NumericItem(str(la_score)))
                 la_t.setItem(idx, 4, QTableWidgetItem(pid))
                 
-                # PFP haku
                 pfp_l = QLabel()
                 pfp_l.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 p_path = self.get_pfp_path(pid)
                 if p_path:
-                    pfp_l.setPixmap(QPixmap(p_path).scaled(75, 75, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                    pix = QPixmap(p_path).scaled(75, 75, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    pfp_l.setPixmap(pix)
                 la_t.setCellWidget(idx, 0, pfp_l)
-            except Exception as e:
-                print(f"Error at row {row}: {e}")
+            except: pass
                 
         la_t.blockSignals(False)
         la_t.resizeRowsToContents()
-        self.tabs.setCurrentIndex(5) # Vaihdetaan LA-välilehdelle
+        self.tabs.setCurrentIndex(5)
 
     def generate_weekly_summary(self):
         weekly_data = defaultdict(lambda: {"name": "", "total": 0})
@@ -355,7 +417,7 @@ class ResultsEditor(QMainWindow):
                 pid = table.item(row, 4).text()
                 if pid:
                     weekly_data[pid]["name"] = table.item(row, 2).text()
-                    weekly_data[pid]["total"] += int(table.item(row, 3).text())
+                    weekly_data[pid]["total"] += int(table.item(row, 3).text().replace(" ", "").replace(".", ""))
 
         sorted_res = sorted(weekly_data.items(), key=lambda x: x[1]["total"], reverse=True)
         vko_t = self.tables["VKO"]
@@ -379,7 +441,7 @@ class ResultsEditor(QMainWindow):
         tab_name = self.tabs.tabText(self.tabs.currentIndex())
         table = self.tables[tab_name]
         errs = []
-        last_val = 999999999999
+        last_val = 999999999999999
         for r in range(table.rowCount()):
             try:
                 val = int(table.item(r, 3).text().replace(" ", "").replace(".", ""))

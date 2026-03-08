@@ -25,7 +25,7 @@ GEMINI_API_KEY = load_api_key()
 UPLOAD_DIR = "UPLOADS"
 RESULTS_DIR = "RESULTS"
 # LISÄTTY: SATURDAY kategoriaan
-CATEGORIES = ["POWER", "DONATIONS", "KILLS", "SATURDAY"]
+CATEGORIES = ["POWER", "DONATIONS", "KILLS", "AI_import"]
 
 # Alustetaan client
 client = genai.Client(api_key=GEMINI_API_KEY)
